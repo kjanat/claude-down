@@ -11,6 +11,5 @@
  * The CLI in `./main.ts` OR's both sources into a single indicator.
  */
 
-export * from '#claude-down/format.ts';
 export * from '#claude-down/sources';
 export * from '#claude-down/types.ts';

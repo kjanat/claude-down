@@ -1,9 +1,9 @@
-import { emoji } from '#claude-down/format.ts';
+import { statusLabel } from '#claude-down';
 import type { Indicator, Result, Signal } from '#claude-down/types.ts';
 
 export function printJson(indicator: Indicator, description: string, dd: Signal, an: Result): unknown {
 	return {
-		state: emoji(indicator),
+		state: statusLabel(indicator),
 		indicator,
 		description,
 		downdetector: dd.ok

@@ -1,5 +1,5 @@
 /**
- * Source A: downdetector (via allestoringen.nl).
+ * Source A: downdetector.
  *
  * Community/editor signal — tends to lead Anthropic's official page by
  * several minutes. The page sits behind a Cloudflare TLS-fingerprint
@@ -18,7 +18,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import type { Signal } from '#claude-down/types.ts';
 
-export const DOWNDETECTOR_URL = 'https://allestoringen.nl/en/status/claude-ai/';
+export const DOWNDETECTOR_URL = 'https://downdetector.com/status/claude-ai/';
 export const CHROME_CANDIDATES: readonly string[] = [
 	'chromium',
 	'google-chrome-stable',

@@ -1,6 +1,8 @@
 # claude-down
 
-**Is Claude down?** A tiny CLI tool to check if Claude is operational, combining official status reports with community signals.
+**Is Claude down? Again?**
+
+> A tiny CLI tool to check if Claude is operational, combining official status reports with community signals.
 
 `claude-down` monitors two sources in parallel:
 
@@ -13,12 +15,16 @@ You can run it directly using `bunx` or `npx`:
 
 ```bash
 bunx claude-down
+# or
+npx -y claude-down
 ```
 
 Or install it globally:
 
 ```bash
 bun install -g claude-down
+# or
+npm install -g claude-down
 ```
 
 ## Usage
@@ -47,6 +53,34 @@ Use for CI/CD or shell scripts where you only care about the exit code.
 claude-down -q
 ```
 
+### Specific source
+
+You can check a specific source using subcommands or the `--source` flag.
+
+```bash
+# Using subcommands
+claude-down anthropic
+claude-down downdetector
+
+# Using flags
+claude-down --source anthropic
+# or
+claude-down -s downdetector
+```
+
+## Browser Usage
+
+`claude-down` provides a browser-safe entry point that only includes the Anthropic Statuspage source (since Downdetector requires a local Chromium binary).
+
+```typescript
+import { checkAnthropic, fetchSummary } from 'claude-down/browser';
+
+const status = await checkAnthropic();
+if (status.down) {
+	console.log('Claude is down:', status.reason);
+}
+```
+
 ## Exit Codes
 
 The CLI returns specific exit codes based on the severity of the outage:
@@ -60,7 +94,7 @@ The CLI returns specific exit codes based on the severity of the outage:
 
 ## Development
 
-This project is built with [dreamcli](https://github.com/kjanat/dreamcli).
+This project is built with [dreamcli].
 
 ### Setup
 
@@ -85,3 +119,4 @@ bun test
 [MIT][LICENSE] © 2026 Kaj Kowalski
 
 [LICENSE]: https://github.com/kjanat/claude-down/blob/master/LICENSE
+[dreamcli]: https://github.com/kjanat/dreamcli

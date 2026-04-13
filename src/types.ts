@@ -41,3 +41,19 @@ export type Signal =
 	| { ok: true; down: false }
 	| { ok: true; down: true; reason: string }
 	| { ok: false; error: string };
+
+export function exitCodeFor(indicator: Indicator) {
+	switch (indicator) {
+		case 'none':
+			return 0;
+		case 'minor':
+			return 1;
+		case 'major':
+		case 'critical':
+			return 2;
+	}
+}
+
+export function statusLabel(indicator: Indicator) {
+	return indicator === 'none' ? 'up' : indicator === 'minor' ? 'degraded' : 'down';
+}

@@ -5,9 +5,11 @@
  * If both error → unknown. Downdetector leads Anthropic's page by minutes.
  *
  * Usage:
- *   claude-down             → human summary + per-source detail, affected components, incidents
- *   claude-down --json      → combined structured payload
- *   claude-down -q          → silent, exit code only
+ *   claude-down               → human summary + per-source detail, affected components, incidents
+ *   claude-down anthropic     → check only Anthropic status
+ *   claude-down downdetector  → check only Downdetector
+ *   claude-down --json        → combined structured payload
+ *   claude-down -q            → silent, exit code only
  *
  * Exit codes:
  *   0  all operational (indicator=none)
@@ -17,48 +19,81 @@
  */
 
 import { checkDowndetector, exitCodeFor, fetchSummary, type Indicator } from '#claude-down';
-import { printHumanText, printJson } from '#claude-down/print';
+import { getSourcesTable } from '#claude-down/print';
 import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
 import { exit } from 'node:process';
+
+const statusAction = async ({ flags, out }: any, sourceOverride?: string) => {
+	const source = sourceOverride ?? flags.source;
+	const [dd, an] = await Promise.all([
+		source === 'anthropic' ? { ok: true, down: false } as const : checkDowndetector(),
+		source === 'downdetector' ? { kind: 'unknown', reason: 'skipped' } as const : fetchSummary(),
+	]);
+
+	// Error handling: if a requested source fails, we can't give a reliable answer.
+	if (source === 'anthropic' && an.kind === 'unknown') {
+		throw new CLIError(`anthropic unavailable: ${an.reason}`, {
+			code: 'ANTHROPIC_UNAVAILABLE',
+			exitCode: 3,
+			details: { anthropic: an.reason },
+		});
+	}
+	if (source === 'downdetector' && !dd.ok) {
+		throw new CLIError(`downdetector unavailable: ${dd.error}`, {
+			code: 'DOWNDETECTOR_UNAVAILABLE',
+			exitCode: 3,
+			details: { downdetector: dd.error },
+		});
+	}
+	if (!source && !dd.ok && an.kind === 'unknown') {
+		throw new CLIError(`unknown — downdetector: ${dd.error}; anthropic: ${an.reason}`, {
+			code: 'SOURCES_UNAVAILABLE',
+			exitCode: 3,
+			details: { downdetector: dd.error, anthropic: an.reason },
+		});
+	}
+
+	// Merge: anthropic is authoritative for tiered severity. Downdetector is
+	// binary; when it reports down we bump below-major indicators up to major.
+	let indicator: Indicator = 'none';
+	let description = '';
+	if (an.kind === 'ok') {
+		indicator = an.summary.status.indicator;
+		description = an.summary.status.description;
+	}
+	if (dd.ok && dd.down) {
+		if (indicator === 'none' || indicator === 'minor') indicator = 'major';
+		const suffix = `downdetector: ${dd.reason}`;
+		description = description ? `${description} · ${suffix}` : suffix;
+	}
+
+	if (flags.quiet) {
+		exit(exitCodeFor(indicator));
+	}
+
+	out.table(getSourcesTable(dd, an, source));
+	exit(exitCodeFor(indicator));
+};
 
 const statusCmd = command('status')
 	.description('Tell if Claude is down (downdetector + Anthropic statuspage)')
 	.flag('quiet', flag.boolean().alias('q').describe('Silent; exit code only'))
-	.action(async ({ flags, out }) => {
-		const [dd, an] = await Promise.all([checkDowndetector(), fetchSummary()]);
+	.flag('source', flag.string().alias('s').describe('Only check one source (anthropic | downdetector)'))
+	.action(statusAction);
 
-		// Both sources failed — we can't say anything.
-		if (!dd.ok && an.kind === 'unknown') {
-			throw new CLIError(`unknown — downdetector: ${dd.error}; anthropic: ${an.reason}`, {
-				code: 'SOURCES_UNAVAILABLE',
-				exitCode: 3,
-				details: { downdetector: dd.error, anthropic: an.reason },
-			});
-		}
+const anthropicCmd = command('anthropic')
+	.description('Check only Anthropic statuspage')
+	.flag('quiet', flag.boolean().alias('q').describe('Silent; exit code only'))
+	.action((ctx) => statusAction(ctx, 'anthropic'));
 
-		// Merge: anthropic is authoritative for tiered severity. Downdetector is
-		// binary; when it reports down we bump below-major indicators up to major.
-		let indicator: Indicator = 'none';
-		let description = '';
-		if (an.kind === 'ok') {
-			indicator = an.summary.status.indicator;
-			description = an.summary.status.description;
-		}
-		if (dd.ok && dd.down) {
-			if (indicator === 'none' || indicator === 'minor') indicator = 'major';
-			const suffix = `downdetector: ${dd.reason}`;
-			description = description ? `${description} · ${suffix}` : suffix;
-		}
-
-		if (out.jsonMode) {
-			out.json(printJson(indicator satisfies Indicator, description, dd, an));
-		} else if (!flags.quiet) {
-			out.log(printHumanText(indicator satisfies Indicator, description, dd, an));
-		}
-
-		exit(exitCodeFor(indicator));
-	});
+const downdetectorCmd = command('downdetector')
+	.description('Check only Downdetector')
+	.flag('quiet', flag.boolean().alias('q').describe('Silent; exit code only'))
+	.action((ctx) => statusAction(ctx, 'downdetector'));
 
 cli('down').packageJson({ inferName: true })
-	.default(statusCmd).completions()
+	.default(statusCmd)
+	.command(anthropicCmd)
+	.command(downdetectorCmd)
+	.completions()
 	.run();

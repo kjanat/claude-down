@@ -6,9 +6,23 @@
  * casts.
  */
 
-import type { Result, Summary } from '#claude-down/types.ts';
+import type { Result, Signal, Summary } from '#claude-down/types.ts';
 
 export const STATUS_URL = 'https://status.claude.com/api/v2/summary.json';
+
+/**
+ * Check Anthropic's status page. Returns a `Signal` that is `down` if the
+ * indicator is major or critical.
+ */
+export async function checkAnthropic(): Promise<Signal> {
+	const res = await fetchSummary();
+	if (res.kind === 'unknown') return { ok: false, error: res.reason };
+	const { indicator, description } = res.summary.status;
+	if (indicator === 'major' || indicator === 'critical') {
+		return { ok: true, down: true, reason: description };
+	}
+	return { ok: true, down: false };
+}
 
 export async function fetchSummary(): Promise<Result> {
 	let res: Response;
