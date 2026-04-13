@@ -26,11 +26,12 @@
 		"bundle": "rm -rf ./dist; bun build src/main.ts --target=node --outfile=dist/main.mjs --format=esm --production --banner='#!/usr/bin/env node'",
 		"fmt": "bunx dprint fmt",
 		"prepare": "bun bundle",
+		"prepublishOnly": "bun run build",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@kjanat/dreamcli": "^2.0.1"
+		"@kjanat/dreamcli": ">=2.0.1, <2.1.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24",
