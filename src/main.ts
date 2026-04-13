@@ -108,6 +108,5 @@ sources:
 	});
 
 cli('down').packageJson({ inferName: true })
-	.description("Tell if Claude is down. Two sources, OR'd together.")
 	.default(statusCmd).completions()
 	.run();
