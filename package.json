@@ -1,31 +1,33 @@
 {
-  "name": "claude-down",
-  "version": "0.0.2",
-  "description": "Is claude code down?",
-  "homepage": "https://github.com/kjanat/claude-down#readme",
-  "bugs": {
-    "url": "https://github.com/kjanat/claude-down/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kjanat/claude-down.git"
-  },
-  "license": "MIT",
-  "author": "Kaj Kowalski",
-  "type": "module",
-  "module": "src/index.ts",
-  "bin": "dist/main.mjs",
-  "scripts": {
-    "build": "rm -rf ./dist; bun build src/main.ts --target=bun --outfile=dist/main.mjs --format=esm --production",
-    "fmt": "dprint fmt .",
-    "prepare": "bun run build",
-    "test": "bun test"
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.12"
-  },
-  "packageManager": "bun@1.3.12",
-  "engines": {
-    "bun": "^1.3"
-  }
+	"name": "claude-down",
+	"version": "0.0.2",
+	"description": "Is claude code down?",
+	"homepage": "https://github.com/kjanat/claude-down#readme",
+	"bugs": {
+		"url": "https://github.com/kjanat/claude-down/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kjanat/claude-down.git"
+	},
+	"license": "MIT",
+	"author": "Kaj Kowalski",
+	"type": "module",
+	"module": "src/index.ts",
+	"bin": "dist/main.mjs",
+	"scripts": {
+		"build": "rm -rf ./dist; bun build src/main.ts --target=bun --outfile=dist/main.mjs --format=esm --production",
+		"fmt": "dprint fmt -c=https://raw.githubusercontent.com/kjanat/kjanat/master/configs/dprint.remote.json",
+		"prepare": "bun run build",
+		"test": "bun test"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.12",
+		"@types/node": "^24"
+	},
+	"packageManager": "bun@1.3.12",
+	"engines": {
+		"bun": ">=1.3",
+		"node": ">=24"
+	}
 }
