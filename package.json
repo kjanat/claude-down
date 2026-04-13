@@ -1,6 +1,6 @@
 {
 	"name": "claude-down",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Is claude code down?",
 	"homepage": "https://github.com/kjanat/claude-down#readme",
 	"bugs": {
@@ -16,9 +16,10 @@
 	"module": "src/index.ts",
 	"bin": "dist/main.mjs",
 	"scripts": {
-		"build": "rm -rf ./dist; bun build src/main.ts --target=node --outfile=dist/main.mjs --external=@kjanat/dreamcli --format=esm --production",
+		"build": "rm -rf ./dist; bun build src/main.ts --target=node --outfile=dist/main.mjs --external=@kjanat/dreamcli --format=esm --production --banner='#!/usr/bin/env node'",
+		"bundle": "rm -rf ./dist; bun build src/main.ts --target=node --outfile=dist/main.mjs --format=esm --production --banner='#!/usr/bin/env node'",
 		"fmt": "bunx dprint fmt",
-		"prepare": "bun run build",
+		"prepare": "bun bundle",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	},

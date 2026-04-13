@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * claude-down CLI — two-source check: downdetector + Anthropic statuspage.
  *
@@ -6,8 +5,7 @@
  * If both error → unknown. Downdetector leads Anthropic's page by minutes.
  *
  * Usage:
- *   claude-down             → one-line human summary
- *   claude-down -v          → + per-source detail, affected components, incidents
+ *   claude-down             → human summary + per-source detail, affected components, incidents
  *   claude-down --json      → combined structured payload
  *   claude-down -q          → silent, exit code only
  *
@@ -18,29 +16,23 @@
  *   3  unknown         (both sources errored)
  */
 
-import { cli, command, flag } from '@kjanat/dreamcli';
+import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
+import { exit } from 'node:process';
 import { checkDowndetector, emoji, exitCodeFor, fetchSummary, type Indicator } from './index.ts';
 
-const statusCmd = command('status').description(
-	'Tell if Claude is down (downdetector + Anthropic statuspage)',
-).flag(
-	'verbose',
-	flag.boolean().alias('v').describe('Show per-source detail, affected components, incidents'),
-).flag('quiet', flag.boolean().alias('q').describe('Silent; exit code only'))
+const statusCmd = command('status')
+	.description('Tell if Claude is down (downdetector + Anthropic statuspage)')
+	.flag('quiet', flag.boolean().alias('q').describe('Silent; exit code only'))
 	.action(async ({ flags, out }) => {
 		const [dd, an] = await Promise.all([checkDowndetector(), fetchSummary()]);
 
 		// Both sources failed — we can't say anything.
 		if (!dd.ok && an.kind === 'unknown') {
-			if (out.jsonMode) {
-				out.json({
-					state: 'unknown',
-					errors: { downdetector: dd.error, anthropic: an.reason },
-				});
-			} else if (!flags.quiet) {
-				out.log(`unknown — downdetector: ${dd.error}; anthropic: ${an.reason}`);
-			}
-			process.exit(3);
+			throw new CLIError(`unknown — downdetector: ${dd.error}; anthropic: ${an.reason}`, {
+				code: 'SOURCES_UNAVAILABLE',
+				exitCode: 3,
+				details: { downdetector: dd.error, anthropic: an.reason },
+			});
 		}
 
 		// Merge: anthropic is authoritative for tiered severity. Downdetector is
@@ -81,36 +73,38 @@ const statusCmd = command('status').description(
 					: { error: an.reason },
 			});
 		} else if (!flags.quiet) {
-			out.log(`${emoji(indicator)} — ${description || 'operational'}`);
-			if (flags.verbose) {
-				out.log('\nsources:');
-				out.log(
-					`  • downdetector: ${dd.ok ? (dd.down ? `down (${dd.reason})` : 'up') : `error (${dd.error})`}`,
-				);
-				out.log(
-					`  • anthropic:    ${
-						an.kind === 'ok'
-							? `${an.summary.status.indicator} — ${an.summary.status.description}`
-							: `error (${an.reason})`
-					}`,
-				);
-				if (an.kind === 'ok') {
-					const affected = an.summary.components.filter((c) => c.status !== 'operational');
-					if (affected.length > 0) {
-						out.log('\naffected components:');
-						for (const c of affected) out.log(`  • ${c.name} (${c.status})`);
-					}
-					if (an.summary.incidents.length > 0) {
-						out.log('\nlive incidents:');
-						for (const i of an.summary.incidents) {
-							out.log(`  • ${i.name} [${i.status}, ${i.impact}]`);
-						}
-					}
-				}
-			}
+			out.log(
+				`${emoji(indicator)} — ${description || 'operational'}
+
+sources:
+  • downdetector: ${dd.ok ? (dd.down ? `down (${dd.reason})` : 'up') : `error (${dd.error})`}
+  • anthropic:    ${
+					an.kind === 'ok'
+						? `${an.summary.status.indicator} — ${an.summary.status.description}`
+						: `error (${an.reason})`
+				}${
+					an.kind === 'ok'
+						&& an.summary.components.some((c) => c.status !== 'operational')
+						? `\n\naffected components:\n${
+							an.summary.components
+								.filter((c) => c.status !== 'operational')
+								.map((c) => `  • ${c.name} (${c.status})`)
+								.join('\n')
+						}`
+						: ''
+				}${
+					an.kind === 'ok' && an.summary.incidents.length > 0
+						? `\n\nlive incidents:\n${
+							an.summary.incidents
+								.map((i) => `  • ${i.name} [${i.status}, ${i.impact}]`)
+								.join('\n')
+						}`
+						: ''
+				}`,
+			);
 		}
 
-		process.exit(exitCodeFor(indicator));
+		exit(exitCodeFor(indicator));
 	});
 
 cli('down').packageJson({ inferName: true })
