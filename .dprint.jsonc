@@ -1,6 +1,7 @@
 {
 	"extends": "https://raw.githubusercontent.com/kjanat/kjanat/master/configs/dprint.remote.json",
 	"exec": {
+		"associations": ["package.json"],
 		"commands": [{ "command": "bunx sort-package-json --stdin", "fileNames": ["package.json"] }],
 	},
 	"plugins": [
