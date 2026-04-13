@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * claude-down CLI — two-source check: downdetector + Anthropic statuspage.
  *
@@ -20,7 +20,7 @@
 
 import { checkDowndetector, emoji, exitCodeFor, fetchSummary, type Indicator } from './index.ts';
 
-const argv = new Set(Bun.argv.slice(2));
+const argv = new Set(process.argv.slice(2));
 const asJson = argv.has('--json');
 const quiet = argv.has('-q') || argv.has('--quiet');
 const verbose = argv.has('-v') || argv.has('--verbose');

@@ -15,9 +15,11 @@
  *   https://allestoringen.nl/en/status/claude-ai/  (downdetector SSR page)
  */
 
+import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 export const STATUS_URL = 'https://status.claude.com/api/v2/summary.json';
 export const DOWNDETECTOR_URL = 'https://allestoringen.nl/en/status/claude-ai/';
@@ -116,11 +118,11 @@ export function emoji(indicator: Indicator): string {
 // ─── Source A: downdetector via headless Chrome + CDP ────────────────────────
 
 /** Locate a Chromium-family binary on $PATH. Returns null if none found. */
-export async function findChrome(): Promise<string | null> {
+export function findChrome(): string | null {
 	for (const name of CHROME_CANDIDATES) {
-		const p = Bun.spawnSync(['which', name]);
-		if (p.exitCode === 0 && p.stdout) {
-			return new TextDecoder().decode(p.stdout).trim();
+		const p = spawnSync('which', [name]);
+		if (p.status === 0 && p.stdout) {
+			return p.stdout.toString().trim();
 		}
 	}
 	return null;
@@ -178,7 +180,7 @@ function isPogoSnapshot(v: unknown): v is PogoSnapshot {
  * Bounded by a 20s wall-clock deadline.
  */
 export async function checkDowndetector(): Promise<Signal> {
-	const chrome = await findChrome();
+	const chrome = findChrome();
 	if (!chrome) return { ok: false, error: 'no chromium/chrome binary found' };
 
 	let userDataDir: string;
@@ -189,12 +191,12 @@ export async function checkDowndetector(): Promise<Signal> {
 	}
 
 	const port = 9222 + Math.floor(Math.random() * 1000);
-	let proc: ReturnType<typeof Bun.spawn> | null = null;
+	let proc: ChildProcess | null = null;
 
 	try {
-		proc = Bun.spawn(
+		proc = spawn(
+			chrome,
 			[
-				chrome,
 				'--headless=new',
 				'--disable-gpu',
 				'--no-sandbox',
@@ -205,7 +207,7 @@ export async function checkDowndetector(): Promise<Signal> {
 				'--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
 				'about:blank',
 			],
-			{ stdout: 'ignore', stderr: 'ignore' },
+			{ stdio: 'ignore' },
 		);
 
 		// Wait for CDP HTTP endpoint to come up.
@@ -220,7 +222,7 @@ export async function checkDowndetector(): Promise<Signal> {
 					break;
 				}
 			} catch {}
-			await Bun.sleep(100);
+			await sleep(100);
 		}
 		if (!cdpUp) return { ok: false, error: 'downdetector: CDP endpoint never came up' };
 
@@ -238,10 +240,15 @@ export async function checkDowndetector(): Promise<Signal> {
 		const ws = new WebSocket(targetJson.webSocketDebuggerUrl);
 		const pending = new Map<number, (msg: unknown) => void>();
 		ws.onmessage = (ev) => {
-			if (typeof ev.data !== 'string') return;
+			const text = typeof ev.data === 'string'
+				? ev.data
+				: ev.data instanceof ArrayBuffer
+				? new TextDecoder().decode(ev.data)
+				: null;
+			if (text === null) return;
 			let parsed: unknown;
 			try {
-				parsed = JSON.parse(ev.data);
+				parsed = JSON.parse(text);
 			} catch {
 				return;
 			}
@@ -296,7 +303,7 @@ export async function checkDowndetector(): Promise<Signal> {
 					break;
 				}
 			}
-			await Bun.sleep(700);
+			await sleep(700);
 		}
 		ws.close();
 
