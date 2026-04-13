@@ -6,8 +6,8 @@
  * by the CLI. `Result` wraps `fetchSummary`'s success/unknown outcomes.
  */
 
-export const INDICATORS = ['none', 'minor', 'major', 'critical'] as const;
-export type Indicator = typeof INDICATORS[number];
+export type Indicator = 'none' | 'minor' | 'major' | 'critical';
+export const INDICATORS: readonly Indicator[] = ['none', 'minor', 'major', 'critical'];
 
 export type Component = {
 	name: string;

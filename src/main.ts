@@ -16,9 +16,10 @@
  *   3  unknown         (both sources errored)
  */
 
+import { checkDowndetector, exitCodeFor, fetchSummary, type Indicator } from '#claude-down';
+import { printHumanText, printJson } from '#claude-down/print';
 import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
 import { exit } from 'node:process';
-import { checkDowndetector, emoji, exitCodeFor, fetchSummary, type Indicator } from './index.ts';
 
 const statusCmd = command('status')
 	.description('Tell if Claude is down (downdetector + Anthropic statuspage)')
@@ -50,58 +51,9 @@ const statusCmd = command('status')
 		}
 
 		if (out.jsonMode) {
-			out.json({
-				state: emoji(indicator),
-				indicator,
-				description,
-				downdetector: dd.ok
-					? { down: dd.down, reason: dd.down ? dd.reason : null }
-					: { error: dd.error },
-				anthropic: an.kind === 'ok'
-					? {
-						indicator: an.summary.status.indicator,
-						description: an.summary.status.description,
-						incidents: an.summary.incidents.map((i) => ({
-							name: i.name,
-							status: i.status,
-							impact: i.impact,
-						})),
-						affected: an.summary.components
-							.filter((c) => c.status !== 'operational')
-							.map((c) => ({ name: c.name, status: c.status })),
-					}
-					: { error: an.reason },
-			});
+			out.json(printJson(indicator satisfies Indicator, description, dd, an));
 		} else if (!flags.quiet) {
-			out.log(
-				`${emoji(indicator)} — ${description || 'operational'}
-
-sources:
-  • downdetector: ${dd.ok ? (dd.down ? `down (${dd.reason})` : 'up') : `error (${dd.error})`}
-  • anthropic:    ${
-					an.kind === 'ok'
-						? `${an.summary.status.indicator} — ${an.summary.status.description}`
-						: `error (${an.reason})`
-				}${
-					an.kind === 'ok'
-						&& an.summary.components.some((c) => c.status !== 'operational')
-						? `\n\naffected components:\n${
-							an.summary.components
-								.filter((c) => c.status !== 'operational')
-								.map((c) => `  • ${c.name} (${c.status})`)
-								.join('\n')
-						}`
-						: ''
-				}${
-					an.kind === 'ok' && an.summary.incidents.length > 0
-						? `\n\nlive incidents:\n${
-							an.summary.incidents
-								.map((i) => `  • ${i.name} [${i.status}, ${i.impact}]`)
-								.join('\n')
-						}`
-						: ''
-				}`,
-			);
+			out.log(printHumanText(indicator satisfies Indicator, description, dd, an));
 		}
 
 		exit(exitCodeFor(indicator));

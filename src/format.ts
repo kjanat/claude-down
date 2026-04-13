@@ -1,10 +1,10 @@
 /**
- * Pure presentation helpers: severity → exit code, severity → label.
+ * Pure presentation helpers: `severity → exit code, severity → label`.
  */
 
-import type { Indicator } from './types.ts';
+import type { Indicator } from '#claude-down/types.ts';
 
-export function exitCodeFor(indicator: Indicator): 0 | 1 | 2 {
+export function exitCodeFor(indicator: Indicator) {
 	switch (indicator) {
 		case 'none':
 			return 0;
@@ -16,6 +16,6 @@ export function exitCodeFor(indicator: Indicator): 0 | 1 | 2 {
 	}
 }
 
-export function emoji(indicator: Indicator): string {
+export function emoji(indicator: Indicator) {
 	return indicator === 'none' ? 'up' : indicator === 'minor' ? 'degraded' : 'down';
 }

@@ -6,7 +6,7 @@
  * casts.
  */
 
-import type { Result, Summary } from './types.ts';
+import type { Result, Summary } from '#claude-down/types.ts';
 
 export const STATUS_URL = 'https://status.claude.com/api/v2/summary.json';
 
@@ -15,7 +15,8 @@ export async function fetchSummary(): Promise<Result> {
 	try {
 		res = await fetch(STATUS_URL, { redirect: 'follow' });
 	} catch (e) {
-		return { kind: 'unknown', reason: `fetch failed: ${(e as Error).message}` };
+		const msg = e instanceof Error ? e.message : String(e);
+		return { kind: 'unknown', reason: `fetch failed: ${msg}` };
 	}
 	if (!res.ok) return { kind: 'unknown', reason: `HTTP ${res.status}` };
 
@@ -32,14 +33,16 @@ export async function fetchSummary(): Promise<Result> {
 
 export function isSummary(v: unknown): v is Summary {
 	if (typeof v !== 'object' || v === null) return false;
-	const o = v as Record<string, unknown>;
-	const s = o.status as Record<string, unknown> | undefined;
+	if (!('status' in v) || typeof v.status !== 'object' || v.status === null) return false;
+	const s = v.status;
 	return (
-		typeof s === 'object'
-		&& s !== null
+		'indicator' in s
 		&& typeof s.indicator === 'string'
+		&& 'description' in s
 		&& typeof s.description === 'string'
-		&& Array.isArray(o.components)
-		&& Array.isArray(o.incidents)
+		&& 'components' in v
+		&& Array.isArray(v.components)
+		&& 'incidents' in v
+		&& Array.isArray(v.incidents)
 	);
 }

@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import type { Signal } from './types.ts';
+import type { Signal } from '#claude-down/types.ts';
 
 export const DOWNDETECTOR_URL = 'https://allestoringen.nl/en/status/claude-ai/';
 export const CHROME_CANDIDATES: readonly string[] = [
@@ -41,25 +41,36 @@ export function findChrome(): string | null {
 // instead of trusting `as` casts.
 
 function isTargetInfo(v: unknown): v is { webSocketDebuggerUrl: string } {
-	if (typeof v !== 'object' || v === null) return false;
-	const o = v as Record<string, unknown>;
-	return typeof o.webSocketDebuggerUrl === 'string';
+	return (
+		v !== null
+		&& typeof v === 'object'
+		&& 'webSocketDebuggerUrl' in v
+		&& typeof v.webSocketDebuggerUrl === 'string'
+	);
 }
 
 function isCdpMessage(v: unknown): v is { id: number } {
-	if (typeof v !== 'object' || v === null) return false;
-	const o = v as Record<string, unknown>;
-	return typeof o.id === 'number';
+	return (
+		v !== null
+		&& typeof v === 'object'
+		&& 'id' in v
+		&& typeof v.id === 'number'
+	);
 }
 
 function isCdpEvalResult(v: unknown): v is { result: { result: { value: string } } } {
-	if (typeof v !== 'object' || v === null) return false;
-	const o = v as Record<string, unknown>;
-	if (typeof o.result !== 'object' || o.result === null) return false;
-	const outer = o.result as Record<string, unknown>;
-	if (typeof outer.result !== 'object' || outer.result === null) return false;
-	const inner = outer.result as Record<string, unknown>;
-	return typeof inner.value === 'string';
+	return (
+		v !== null
+		&& typeof v === 'object'
+		&& 'result' in v
+		&& typeof v.result === 'object'
+		&& v.result !== null
+		&& 'result' in v.result
+		&& typeof v.result.result === 'object'
+		&& v.result.result !== null
+		&& 'value' in v.result.result
+		&& typeof v.result.result.value === 'string'
+	);
 }
 
 type PogoSnapshot = {
@@ -70,13 +81,12 @@ type PogoSnapshot = {
 
 function isPogoSnapshot(v: unknown): v is PogoSnapshot {
 	if (typeof v !== 'object' || v === null) return false;
-	const o = v as Record<string, unknown>;
-	if (typeof o.title !== 'string') return false;
-	if (o.h1 !== null && typeof o.h1 !== 'string') return false;
-	if (o.pogo === null) return true;
-	if (typeof o.pogo !== 'object') return false;
-	const pogo = o.pogo as Record<string, unknown>;
-	if (pogo.outage !== undefined && typeof pogo.outage !== 'boolean') return false;
+	if (!('title' in v) || typeof v.title !== 'string') return false;
+	if ('h1' in v && v.h1 !== null && typeof v.h1 !== 'string') return false;
+	if (!('pogo' in v) || v.pogo === null) return true;
+	if (typeof v.pogo !== 'object') return false;
+	const pogo = v.pogo;
+	if ('outage' in pogo && pogo.outage !== undefined && typeof pogo.outage !== 'boolean') return false;
 	return true;
 }
 
@@ -95,7 +105,8 @@ export async function checkDowndetector(): Promise<Signal> {
 	try {
 		userDataDir = mkdtempSync(join(tmpdir(), 'claude-down-'));
 	} catch (e) {
-		return { ok: false, error: `downdetector: mkdtemp failed: ${(e as Error).message}` };
+		const msg = e instanceof Error ? e.message : String(e);
+		return { ok: false, error: `downdetector: mkdtemp failed: ${msg}` };
 	}
 
 	const port = 9222 + Math.floor(Math.random() * 1000);
@@ -223,7 +234,8 @@ export async function checkDowndetector(): Promise<Signal> {
 		}
 		return { ok: true, down: false };
 	} catch (e) {
-		return { ok: false, error: `downdetector: ${(e as Error).message}` };
+		const msg = e instanceof Error ? e.message : String(e);
+		return { ok: false, error: `downdetector: ${msg}` };
 	} finally {
 		proc?.kill();
 		// Retry the dir removal: `proc.kill()` is sync signal delivery, but chrome
