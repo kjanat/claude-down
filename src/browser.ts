@@ -1,9 +1,3 @@
-/**
- * claude-down — browser-safe entry point.
- *
- * Only includes sources that work in the browser (Anthropic Statuspage).
- * Excludes Downdetector, as it requires a local Chromium binary.
- */
-
-export { checkAnthropic, fetchSummary, isSummary, STATUS_URL } from '#claude-down/sources/anthropic.ts';
-export * from '#claude-down/types.ts';
+export { default as checkAnthropic } from '#claude-down/anthropic.ts';
+export type { Result } from '#claude-down/types.ts';
+export type { Summary } from 'statuspage.io';

@@ -1,33 +1,13 @@
-/**
- * Source A: downdetector.
- *
- * Community/editor signal — tends to lead Anthropic's official page by
- * several minutes. The page sits behind a Cloudflare TLS-fingerprint
- * challenge, so plain `fetch` gets an interstitial. We spawn a real headless
- * Chromium, drive it over CDP, wait for the CF challenge to clear, then read
- * `window.PogoConfig.outage` out of the SSR'd page.
- *
- * Bounded by a 20s wall-clock deadline.
- */
-
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
+import { CHROME_CANDIDATES, DOWNDETECTOR_URL } from '#claude-down/constants.ts';
 import type { Signal } from '#claude-down/types.ts';
 
-export const DOWNDETECTOR_URL = 'https://downdetector.com/status/claude-ai/';
-export const CHROME_CANDIDATES: readonly string[] = [
-	'chromium',
-	'google-chrome-stable',
-	'google-chrome',
-	'brave',
-];
-
-/** Locate a Chromium-family binary on $PATH. Returns null if none found. */
-export function findChrome(): string | null {
+function findChrome(): string | null {
 	for (const name of CHROME_CANDIDATES) {
 		const p = spawnSync('which', [name]);
 		if (p.status === 0 && p.stdout) {
@@ -36,9 +16,6 @@ export function findChrome(): string | null {
 	}
 	return null;
 }
-
-// CDP / PogoConfig shape guards — reject unknown payloads at the boundary
-// instead of trusting `as` casts.
 
 function isTargetInfo(v: unknown): v is { webSocketDebuggerUrl: string } {
 	return (
@@ -50,12 +27,7 @@ function isTargetInfo(v: unknown): v is { webSocketDebuggerUrl: string } {
 }
 
 function isCdpMessage(v: unknown): v is { id: number } {
-	return (
-		v !== null
-		&& typeof v === 'object'
-		&& 'id' in v
-		&& typeof v.id === 'number'
-	);
+	return v !== null && typeof v === 'object' && 'id' in v && typeof v.id === 'number';
 }
 
 function isCdpEvalResult(v: unknown): v is { result: { result: { value: string } } } {
@@ -90,14 +62,7 @@ function isPogoSnapshot(v: unknown): v is PogoSnapshot {
 	return true;
 }
 
-/**
- * Check downdetector (allestoringen.nl) via headless Chrome driven over CDP.
- *
- * Spawns a real Chromium, lets it solve Cloudflare's TLS-fingerprint
- * challenge, then reads `window.PogoConfig.outage` out of the SSR'd page.
- * Bounded by a 20s wall-clock deadline.
- */
-export async function checkDowndetector(): Promise<Signal> {
+async function check(): Promise<Signal> {
 	const chrome = findChrome();
 	if (!chrome) return { ok: false, error: 'no chromium/chrome binary found' };
 
@@ -106,7 +71,7 @@ export async function checkDowndetector(): Promise<Signal> {
 		userDataDir = mkdtempSync(join(tmpdir(), 'claude-down-'));
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : String(e);
-		return { ok: false, error: `downdetector: mkdtemp failed: ${msg}` };
+		return { ok: false, error: `mkdtemp failed: ${msg}` };
 	}
 
 	const port = 9222 + Math.floor(Math.random() * 1000);
@@ -129,7 +94,6 @@ export async function checkDowndetector(): Promise<Signal> {
 			{ stdio: 'ignore' },
 		);
 
-		// Wait for CDP HTTP endpoint to come up.
 		const base = `http://localhost:${port}`;
 		const cdpDeadline = Date.now() + 5000;
 		let cdpUp = false;
@@ -140,22 +104,21 @@ export async function checkDowndetector(): Promise<Signal> {
 					cdpUp = true;
 					break;
 				}
-			} catch {}
+			} catch {
+				// retry
+			}
 			await sleep(100);
 		}
-		if (!cdpUp) return { ok: false, error: 'downdetector: CDP endpoint never came up' };
+		if (!cdpUp) return { ok: false, error: 'CDP endpoint never came up' };
 
-		// Open a new target pointed at the downdetector page.
-		const targetRes = await fetch(
-			`${base}/json/new?${encodeURIComponent(DOWNDETECTOR_URL)}`,
-			{ method: 'PUT' },
-		);
+		const targetRes = await fetch(`${base}/json/new?${encodeURIComponent(DOWNDETECTOR_URL)}`, {
+			method: 'PUT',
+		});
 		const targetJson: unknown = await targetRes.json();
 		if (!isTargetInfo(targetJson)) {
-			return { ok: false, error: 'downdetector: unexpected CDP target shape' };
+			return { ok: false, error: 'unexpected CDP target shape' };
 		}
 
-		// Drive CDP over WebSocket with a simple request/response multiplexer.
 		const ws = new WebSocket(targetJson.webSocketDebuggerUrl);
 		const pending = new Map<number, (msg: unknown) => void>();
 		ws.onmessage = (ev) => {
@@ -183,10 +146,7 @@ export async function checkDowndetector(): Promise<Signal> {
 		});
 
 		let msgId = 0;
-		const send = (
-			method: string,
-			params: Record<string, unknown> = {},
-		): Promise<unknown> =>
+		const send = (method: string, params: Record<string, unknown> = {}): Promise<unknown> =>
 			new Promise((resolve) => {
 				const id = ++msgId;
 				pending.set(id, resolve);
@@ -195,7 +155,6 @@ export async function checkDowndetector(): Promise<Signal> {
 
 		await send('Runtime.enable');
 
-		// Poll PogoConfig until CF challenge clears, up to 20s.
 		const deadline = Date.now() + 20000;
 		let pogo: { outage?: boolean } | null = null;
 		let heading: string | null = null;
@@ -227,7 +186,7 @@ export async function checkDowndetector(): Promise<Signal> {
 		ws.close();
 
 		if (!pogo) {
-			return { ok: false, error: 'downdetector: CF challenge not cleared in time' };
+			return { ok: false, error: 'CF challenge not cleared in time' };
 		}
 		if (pogo.outage === true) {
 			return { ok: true, down: true, reason: heading ?? 'outage reported' };
@@ -235,12 +194,11 @@ export async function checkDowndetector(): Promise<Signal> {
 		return { ok: true, down: false };
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : String(e);
-		return { ok: false, error: `downdetector: ${msg}` };
+		return { ok: false, error: msg };
 	} finally {
 		proc?.kill();
-		// Retry the dir removal: `proc.kill()` is sync signal delivery, but chrome
-		// takes a moment to release its user-data-dir files. Without retries we get
-		// flaky ENOTEMPTY.
 		rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 	}
 }
+
+export default check;
