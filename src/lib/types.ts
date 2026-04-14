@@ -1,6 +1,6 @@
 import type { Summary } from 'statuspage.io';
 
-import type { EXIT_CODES } from '#claude-down/constants.ts';
+import type { EXIT_CODES } from './constants.ts';
 
 type Indicator = keyof typeof EXIT_CODES;
 

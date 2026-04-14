@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from '#claude-down';
 import { cli, command, flag, middleware } from '@kjanat/dreamcli';
 import { exit, stdout } from 'node:process';
+import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from './index.ts';
 
 const sources = ['anthropic', 'downdetector'] as const;
 type Source = (typeof sources)[number];
@@ -45,14 +45,6 @@ async function main(
 			code: 'DOWNDETECTOR_UNAVAILABLE',
 			message: `downdetector unavailable: ${dd.error}`,
 			details: { downdetector: dd.error },
-		});
-	}
-
-	if (!source && !dd.ok && an.kind === 'unknown') {
-		throw toCLIError({
-			code: 'SOURCES_UNAVAILABLE',
-			message: `unknown — downdetector: ${dd.error}; anthropic: ${an.reason}`,
-			details: { sources: `downdetector: ${dd.error}; anthropic: ${an.reason}` },
 		});
 	}
 

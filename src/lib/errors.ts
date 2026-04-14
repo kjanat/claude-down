@@ -1,6 +1,6 @@
 import { CLIError } from '@kjanat/dreamcli';
 
-import { EXIT_CODES } from '#claude-down/constants.ts';
+import { EXIT_CODES } from './constants.ts';
 
 type ErrorSource = 'ANTHROPIC' | 'DOWNDETECTOR' | 'SOURCES';
 type ErrorSeverity = 'UNAVAILABLE';

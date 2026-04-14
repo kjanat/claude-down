@@ -1,6 +1,6 @@
 {
 	"name": "claude-down",
-	"version": "0.1.3",
+	"version": "0.2.0",
 	"description": "Is claude code down?",
 	"homepage": "https://github.com/kjanat/claude-down#readme",
 	"bugs": {
@@ -19,11 +19,12 @@
 	},
 	"exports": {
 		".": "./dist/index.mjs",
-		"./browser": "./dist/browser.js",
+		"./browser": "./dist/browser/browser.js",
+		"./cli": "./dist/bin/cli.mjs",
 		"./package.json": "./package.json"
 	},
 	"bin": {
-		"claude-down": "./dist/cli.mjs"
+		"claude-down": "./dist/bin/cli.mjs"
 	},
 	"scripts": {
 		"build": "tsdown",
@@ -62,5 +63,9 @@
 				"onFail": "error"
 			}
 		]
+	},
+	"inlinedDependencies": {
+		"@ffflorian/api-client": "2.5.1",
+		"statuspage.io": "3.4.7"
 	}
 }

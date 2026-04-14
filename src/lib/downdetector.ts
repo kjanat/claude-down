@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { CHROME_CANDIDATES, DOWNDETECTOR_URL } from '#claude-down/constants.ts';
-import type { Signal } from '#claude-down/types.ts';
+import { CHROME_CANDIDATES, DOWNDETECTOR_URL } from './constants.ts';
+import type { Signal } from './types.ts';
 
 function findChrome(): string | null {
 	for (const name of CHROME_CANDIDATES) {
@@ -55,7 +55,8 @@ function isPogoSnapshot(v: unknown): v is PogoSnapshot {
 	if (typeof v !== 'object' || v === null) return false;
 	if (!('title' in v) || typeof v.title !== 'string') return false;
 	if ('h1' in v && v.h1 !== null && typeof v.h1 !== 'string') return false;
-	if (!('pogo' in v) || v.pogo === null) return true;
+	if (!('pogo' in v)) return false;
+	if (v.pogo === null) return true;
 	if (typeof v.pogo !== 'object') return false;
 	const pogo = v.pogo;
 	if ('outage' in pogo && pogo.outage !== undefined && typeof pogo.outage !== 'boolean') return false;
@@ -141,15 +142,24 @@ async function check(): Promise<Signal> {
 				cb(parsed);
 			}
 		};
-		await new Promise<void>((resolve) => {
+		await new Promise<void>((resolve, reject) => {
 			ws.onopen = () => resolve();
+			ws.onerror = () => reject(new Error('WebSocket connection failed'));
+			ws.onclose = () => reject(new Error('WebSocket closed before opening'));
 		});
 
 		let msgId = 0;
 		const send = (method: string, params: Record<string, unknown> = {}): Promise<unknown> =>
-			new Promise((resolve) => {
+			new Promise((resolve, reject) => {
 				const id = ++msgId;
-				pending.set(id, resolve);
+				const timer = setTimeout(() => {
+					pending.delete(id);
+					reject(new Error(`CDP command '${method}' timed out`));
+				}, 5000);
+				pending.set(id, (msg) => {
+					clearTimeout(timer);
+					resolve(msg);
+				});
 				ws.send(JSON.stringify({ id, method, params }));
 			});
 

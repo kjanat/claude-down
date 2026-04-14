@@ -1,7 +1,7 @@
 import { Statuspage } from 'statuspage.io';
 
-import { ANTHROPIC_STATUS_BASE } from '#claude-down/constants.ts';
-import type { Result } from '#claude-down/types.ts';
+import { ANTHROPIC_STATUS_BASE } from './constants.ts';
+import type { Result } from './types.ts';
 
 const client = new Statuspage('anthropic');
 client.setApiUrl(ANTHROPIC_STATUS_BASE);
