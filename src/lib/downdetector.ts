@@ -227,6 +227,82 @@ async function pollPogoSnapshot(
 }
 
 /**
+ * Launches a headless Chrome bound to a random remote-debugging port and waits for
+ * the Chrome DevTools Protocol HTTP endpoint to become reachable.
+ *
+ * On failure the spawned process and its temporary user data directory are cleaned up
+ * before returning. On success the caller owns cleanup of `proc` and `userDataDir`.
+ *
+ * @param chrome - Path to the Chrome/Chromium executable.
+ * @returns A handle to the running browser, or an error variant compatible with {@link Signal}.
+ */
+async function launchBrowser(chrome: string): Promise<
+	| { ok: true; proc: ChildProcess; userDataDir: string; base: string }
+	| { ok: false; error: string }
+> {
+	let userDataDir: string;
+	try {
+		userDataDir = mkdtempSync(join(tmpdir(), 'claude-down-'));
+	} catch (e) {
+		const msg = e instanceof Error ? e.message : String(e);
+		return { ok: false, error: `mkdtemp failed: ${msg}` };
+	}
+
+	const port = 9222 + Math.floor(Math.random() * 1000);
+	const proc = spawn(
+		chrome,
+		[
+			'--headless=new',
+			'--disable-gpu',
+			'--no-sandbox',
+			'--disable-blink-features=AutomationControlled',
+			'--window-size=1920,1080',
+			`--user-data-dir=${userDataDir}`,
+			`--remote-debugging-port=${port}`,
+			'--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
+			'about:blank',
+		],
+		{ stdio: 'ignore' },
+	);
+
+	const base = `http://localhost:${port}`;
+	if (!await waitForCdp(base, 5000)) {
+		proc.kill();
+		rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+		return { ok: false, error: 'CDP endpoint never came up' };
+	}
+
+	return { ok: true, proc, userDataDir, base };
+}
+
+/**
+ * Creates a fresh CDP target navigated to `url` and opens a WebSocket connection to it.
+ *
+ * @param base - Base URL of the CDP HTTP endpoint (e.g. `http://localhost:9222`).
+ * @param url - Page URL the new target should navigate to.
+ * @returns A CDP send function and a `close` callback for the WebSocket, or an error variant.
+ */
+async function openCdpTarget(base: string, url: string): Promise<
+	| { ok: true; send: CdpSend; close: () => void }
+	| { ok: false; error: string }
+> {
+	const targetRes = await fetch(`${base}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' });
+	const targetJson: unknown = await targetRes.json();
+	if (!isTargetInfo(targetJson)) {
+		return { ok: false, error: 'unexpected CDP target shape' };
+	}
+
+	const ws = new WebSocket(targetJson.webSocketDebuggerUrl);
+	await new Promise<void>((resolve, reject) => {
+		ws.onopen = () => resolve();
+		ws.onerror = () => reject(new Error('WebSocket connection failed'));
+		ws.onclose = () => reject(new Error('WebSocket closed before opening'));
+	});
+
+	return { ok: true, send: createCdpConnection(ws), close: () => ws.close() };
+}
+
+/**
  * Launches a headless Chrome instance, navigates to the Downdetector page for Claude AI,
  * waits for the Cloudflare challenge to clear, and extracts the outage status.
  *
@@ -238,61 +314,18 @@ async function check(): Promise<Signal> {
 	const chrome = findChrome();
 	if (!chrome) return { ok: false, error: 'no chromium/chrome binary found' };
 
-	let userDataDir: string;
+	const launched = await launchBrowser(chrome);
+	if (!launched.ok) return launched;
+
+	const { proc, userDataDir, base } = launched;
 	try {
-		userDataDir = mkdtempSync(join(tmpdir(), 'claude-down-'));
-	} catch (e) {
-		const msg = e instanceof Error ? e.message : String(e);
-		return { ok: false, error: `mkdtemp failed: ${msg}` };
-	}
+		const target = await openCdpTarget(base, DOWNDETECTOR_URL);
+		if (!target.ok) return target;
 
-	const port = 9222 + Math.floor(Math.random() * 1000);
-	let proc: ChildProcess | null = null;
+		const result = await pollPogoSnapshot(target.send, 20000);
+		target.close();
 
-	try {
-		proc = spawn(
-			chrome,
-			[
-				'--headless=new',
-				'--disable-gpu',
-				'--no-sandbox',
-				'--disable-blink-features=AutomationControlled',
-				'--window-size=1920,1080',
-				`--user-data-dir=${userDataDir}`,
-				`--remote-debugging-port=${port}`,
-				'--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
-				'about:blank',
-			],
-			{ stdio: 'ignore' },
-		);
-
-		const base = `http://localhost:${port}`;
-		if (!await waitForCdp(base, 5000)) {
-			return { ok: false, error: 'CDP endpoint never came up' };
-		}
-
-		const targetRes = await fetch(`${base}/json/new?${encodeURIComponent(DOWNDETECTOR_URL)}`, {
-			method: 'PUT',
-		});
-		const targetJson: unknown = await targetRes.json();
-		if (!isTargetInfo(targetJson)) {
-			return { ok: false, error: 'unexpected CDP target shape' };
-		}
-
-		const ws = new WebSocket(targetJson.webSocketDebuggerUrl);
-		const send = createCdpConnection(ws);
-		await new Promise<void>((resolve, reject) => {
-			ws.onopen = () => resolve();
-			ws.onerror = () => reject(new Error('WebSocket connection failed'));
-			ws.onclose = () => reject(new Error('WebSocket closed before opening'));
-		});
-
-		const result = await pollPogoSnapshot(send, 20000);
-		ws.close();
-
-		if (!result) {
-			return { ok: false, error: 'CF challenge not cleared in time' };
-		}
+		if (!result) return { ok: false, error: 'CF challenge not cleared in time' };
 		if (result.pogo.outage === true) {
 			return { ok: true, down: true, reason: result.heading ?? 'outage reported' };
 		}
@@ -301,7 +334,7 @@ async function check(): Promise<Signal> {
 		const msg = e instanceof Error ? e.message : String(e);
 		return { ok: false, error: msg };
 	} finally {
-		proc?.kill();
+		proc.kill();
 		rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 	}
 }

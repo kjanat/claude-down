@@ -4,7 +4,7 @@ const EXIT_CODES = {
 	'minor': 1,
 	'major': 2,
 	'critical': 2,
-	'unavailable': 3,
+	'unavailable': 21,
 } as const;
 
 /** Base URL for Anthropic's status page API. */
