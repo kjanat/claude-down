@@ -1,4 +1,5 @@
 import { command } from '@kjanat/dreamcli';
+import { exit } from 'node:process';
 
 import { anthropicStatusBaseFlag, quietFlag, sourceSelectionFlag } from '#claude-down/cli/flags.ts';
 import {
@@ -22,7 +23,12 @@ const statusCommand = command('status')
 		const results = await checkSources(flags.source, {
 			anthropicStatusBase: flags.anthropicStatusBase,
 		});
-		renderStatusResult(flags.quiet ? summarizeExitCode(results) : sortRows(results), out);
+		if (flags.quiet) {
+			const exitCode = summarizeExitCode(results);
+			if (exitCode !== 0) exit(exitCode);
+			return;
+		}
+		renderStatusResult(sortRows(results), out);
 	});
 
 const anthropicCommand = command('anthropic')
@@ -34,7 +40,11 @@ const anthropicCommand = command('anthropic')
 		const result = await checkSource('anthropic', {
 			anthropicStatusBase: flags.anthropicStatusBase,
 		});
-		renderStatusResult(flags.quiet ? result.exitCode : [result.row], out);
+		if (flags.quiet) {
+			if (result.exitCode !== 0) exit(result.exitCode);
+			return;
+		}
+		renderStatusResult([result.row], out);
 	});
 
 const downdetectorCommand = command('downdetector')
@@ -43,7 +53,11 @@ const downdetectorCommand = command('downdetector')
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
 		const result = await checkSource('downdetector');
-		renderStatusResult(flags.quiet ? result.exitCode : [result.row], out);
+		if (flags.quiet) {
+			if (result.exitCode !== 0) exit(result.exitCode);
+			return;
+		}
+		renderStatusResult([result.row], out);
 	});
 
 export { anthropicCommand, downdetectorCommand, statusCommand };

@@ -6,8 +6,6 @@ import { EXIT_CODES } from '#claude-down/lib/constants.ts';
 import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
 import { toCLIError } from '#claude-down/lib/errors.ts';
 
-import { exit } from 'node:process';
-
 /** Mapping of sources to their display labels for output formatting. */
 const sourceLabels = {
 	anthropic: 'Anthropic',
@@ -271,26 +269,21 @@ function formatRows(rows: readonly StatusRow[]): string {
 }
 
 /**
- * Renders the status result to the output, either as JSON or formatted text.
+ * Renders status rows to the output, either as JSON or formatted text.
  *
- * If the result is a number, it exits the process with that code.
- * If the output is in JSON mode or not a TTY, it emits the result as JSON.
+ * If the output is in JSON mode or not a TTY, it emits the rows as JSON.
  * Otherwise, it formats the rows for human-readable output.
  *
- * @param result - The status result to render, either an exit code or an array of status rows.
+ * @param rows - The status rows to render.
  * @param out - The output interface to write to.
  */
-function renderStatusResult(result: number | readonly StatusRow[], out: Out): void {
-	if (typeof result === 'number') {
-		exit(result);
-	}
-
+function renderStatusResult(rows: readonly StatusRow[], out: Out): void {
 	if (out.jsonMode || !out.isTTY) {
-		out.json(result);
+		out.json(rows);
 		return;
 	}
 
-	out.log(formatRows(result));
+	out.log(formatRows(rows));
 }
 
 export { checkSource, checkSources, renderStatusResult, sortRows, sourceLabels, summarizeExitCode };
