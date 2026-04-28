@@ -1,3 +1,5 @@
+import type { Out } from '@kjanat/dreamcli';
+
 import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from '#claude-down';
 import { env, exit } from 'node:process';
 
@@ -42,12 +44,6 @@ type SourceCheck = Readonly<{
 	exitCode: number;
 	row: StatusRow;
 }>;
-
-type Output = {
-	jsonMode: boolean;
-	json(value: unknown): void;
-	log(message: string): void;
-};
 
 function isApiIndicator(value: string): value is Exclude<Indicator, 'unavailable'> {
 	return value === 'none' || value === 'minor' || value === 'major' || value === 'critical';
@@ -164,12 +160,12 @@ function formatRows(rows: readonly StatusRow[]): string {
 	return rows.map((row) => formatRow(row)).join('\n\n');
 }
 
-function renderStatusResult(result: number | readonly StatusRow[], out: Output): void {
+function renderStatusResult(result: number | readonly StatusRow[], out: Out): void {
 	if (typeof result === 'number') {
 		exit(result);
 	}
 
-	if (out.jsonMode) {
+	if (out.jsonMode || !out.isTTY) {
 		out.json(result);
 		return;
 	}

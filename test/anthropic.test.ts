@@ -109,7 +109,7 @@ describe('Anthropic status fixture', () => {
 		const server = requireFixtureServer(fixtureServer);
 		const result = await withAnthropicStatusBase(
 			server.baseUrl,
-			() => runCommand(anthropicCommand, []),
+			() => runCommand(anthropicCommand, [], { isTTY: true }),
 		);
 
 		expect(result.exitCode).toBe(0);
@@ -130,11 +130,11 @@ Anthropic
 		expect(server.requests).toEqual(['/api/v2/summary.json']);
 	});
 
-	test('status command emits JSON rows in json mode', async () => {
+	test('status command emits JSON rows when stdout is not a tty', async () => {
 		const server = requireFixtureServer(fixtureServer);
 		const result = await withAnthropicStatusBase(
 			server.baseUrl,
-			() => runCommand(statusCommand, ['--source', 'anthropic'], { jsonMode: true }),
+			() => runCommand(statusCommand, ['--source', 'anthropic']),
 		);
 
 		expect(result.exitCode).toBe(0);
