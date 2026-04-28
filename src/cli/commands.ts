@@ -1,7 +1,14 @@
-import { cli, command } from '@kjanat/dreamcli';
+import { command } from '@kjanat/dreamcli';
 
-import { anthropicStatusBaseFlag, quietFlag, sourceSelectionFlag } from './flags.ts';
-import { checkSource, checkSources, renderStatusResult, sortRows, sourceLabels, summarizeExitCode } from './status.ts';
+import { anthropicStatusBaseFlag, quietFlag, sourceSelectionFlag } from '#claude-down/cli/flags.ts';
+import {
+	checkSource,
+	checkSources,
+	renderStatusResult,
+	sortRows,
+	sourceLabels,
+	summarizeExitCode,
+} from '#claude-down/cli/status.ts';
 
 const statusCommand = command('status')
 	.description('Check Claude status across Anthropic and Downdetector')
@@ -39,11 +46,4 @@ const downdetectorCommand = command('downdetector')
 		renderStatusResult(flags.quiet ? result.exitCode : [result.row], out);
 	});
 
-const claudeDown = cli('claude-down')
-	.packageJson({ inferName: true })
-	.default(statusCommand)
-	.command(anthropicCommand)
-	.command(downdetectorCommand)
-	.completions();
-
-export { anthropicCommand, claudeDown, downdetectorCommand, statusCommand };
+export { anthropicCommand, downdetectorCommand, statusCommand };

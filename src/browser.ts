@@ -1,3 +1,2 @@
-export type { Summary } from 'statuspage.io';
-export { default as checkAnthropic } from './lib/anthropic.ts';
-export type { Result } from './lib/types.ts';
+export { checkAnthropic } from '#claude-down/lib/anthropic.ts';
+export type { Result, Summary } from '#claude-down/lib/types.ts';

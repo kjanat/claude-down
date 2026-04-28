@@ -2,8 +2,9 @@ import { runCommand } from '@kjanat/dreamcli/testkit';
 import { file } from 'bun';
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 
-import checkAnthropic from '#claude-down/lib/anthropic.ts';
-import { anthropicCommand, statusCommand } from '#claude-down/main.ts';
+import { anthropicCommand, statusCommand } from '#claude-down/cli/commands.ts';
+import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
+import { claudeDown } from '#claude-down/main.ts';
 
 const anthropicFixtureUrl = new URL(import.meta.resolve('#test/fixtures/anthropic-down.json'));
 const anthropicStatusBaseEnvVar = 'CLAUDE_DOWN_ANTHROPIC_STATUS_BASE';
@@ -113,6 +114,35 @@ Anthropic
     - Claude Code
     - Claude Cowork
 `,
+		]);
+		expect(server.requests).toEqual(['/api/v2/summary.json']);
+	});
+
+	test('root cli dispatches explicit status command', async () => {
+		const server = requireFixtureServer(fixtureServer);
+		const result = await claudeDown.execute(['status', '--source', 'anthropic'], {
+			env: {
+				[anthropicStatusBaseEnvVar]: server.baseUrl,
+			},
+		});
+
+		expect(result.exitCode).toBe(0);
+		expect(result.stderr).toEqual([]);
+		expect(JSON.parse(result.stdout[0] ?? 'null')).toEqual([
+			{
+				source: 'anthropic',
+				status: 'major',
+				details: 'Partial System Outage',
+				incidents: [
+					{ name: 'Claude.ai unavailable and elevated errors on the API', status: 'identified' },
+				],
+				affected: [
+					{ name: 'claude.ai', status: 'major_outage' },
+					{ name: 'Claude API (api.anthropic.com)', status: 'partial_outage' },
+					{ name: 'Claude Code', status: 'partial_outage' },
+					{ name: 'Claude Cowork', status: 'major_outage' },
+				],
+			},
 		]);
 		expect(server.requests).toEqual(['/api/v2/summary.json']);
 	});

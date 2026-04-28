@@ -1,4 +1,5 @@
 {
 	"$schema": "https://www.schemastore.org/markdownlint.json",
-	"no-hard-tabs": false
+	"no-hard-tabs": false,
+	"no-inline-html": false
 }

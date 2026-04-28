@@ -4,11 +4,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { CHROME_CANDIDATES, DOWNDETECTOR_URL } from './constants.ts';
-import type { Signal } from './types.ts';
+import { BROWSER_CANDIDATES, DOWNDETECTOR_URL } from '#claude-down/lib/constants.ts';
+import type { Signal } from '#claude-down/lib/types.ts';
 
+/**
+ * Attempts to find the path to a Chrome or Chromium executable by checking common binary names.
+ *
+ * It uses the `which` command to check for the presence of each candidate browser in the system's PATH.
+ * If a valid browser is found, its path is returned; otherwise, null is returned.
+ *
+ * @returns {string | null} The path to the Chrome/Chromium executable, or null if not found.
+ */
 function findChrome(): string | null {
-	for (const name of CHROME_CANDIDATES) {
+	for (const name of BROWSER_CANDIDATES) {
 		const p = spawnSync('which', [name]);
 		if (p.status === 0 && p.stdout) {
 			return p.stdout.toString().trim();
@@ -17,6 +25,14 @@ function findChrome(): string | null {
 	return null;
 }
 
+/**
+ * Type guard to check if a given value conforms to the expected shape of a CDP target info object.
+ *
+ * This function verifies that the input is an object with a `webSocketDebuggerUrl` property of type string.
+ *
+ * @param v - The value to check.
+ * @returns True if the value is a valid target info object, false otherwise.
+ */
 function isTargetInfo(v: unknown): v is { webSocketDebuggerUrl: string } {
 	return (
 		v !== null
@@ -26,10 +42,26 @@ function isTargetInfo(v: unknown): v is { webSocketDebuggerUrl: string } {
 	);
 }
 
+/**
+ * Type guard to check if a given value conforms to the expected shape of a CDP message with an `id` property.
+ *
+ * This function verifies that the input is an object with an `id` property of type number.
+ *
+ * @param v - The value to check.
+ * @returns True if the value is a valid CDP message with an `id`, false otherwise.
+ */
 function isCdpMessage(v: unknown): v is { id: number } {
 	return v !== null && typeof v === 'object' && 'id' in v && typeof v.id === 'number';
 }
 
+/**
+ * Type guard to check if a given value conforms to the expected shape of a CDP evaluation result.
+ *
+ * This function verifies that the input is an object with a nested structure containing a `value` property of type string.
+ *
+ * @param v - The value to check.
+ * @returns True if the value is a valid CDP evaluation result, false otherwise.
+ */
 function isCdpEvalResult(v: unknown): v is { result: { result: { value: string } } } {
 	return (
 		v !== null
@@ -45,12 +77,27 @@ function isCdpEvalResult(v: unknown): v is { result: { result: { value: string }
 	);
 }
 
+/**
+ * Type definition for the snapshot of the Downdetector page, including the title, Pogo configuration, and heading.
+ *
+ * This type represents the structure of the data extracted from the Downdetector page after clearing the Cloudflare challenge.
+ * The `pogo` property may contain an `outage` boolean indicating whether an outage is reported, or it may be null if not present.
+ * The `h1` property represents the text content of the first heading on the page, which may provide additional context about the outage.
+ */
 type PogoSnapshot = {
 	title: string;
 	pogo: { outage?: boolean } | null;
 	h1: string | null;
 };
 
+/**
+ * Type guard to check if a given value conforms to the expected shape of a PogoSnapshot object.
+ *
+ * This function verifies that the input is an object with the required properties (`title`, `pogo`, and optionally `h1`) and that they have the correct types.
+ *
+ * @param v - The value to check.
+ * @returns True if the value is a valid PogoSnapshot, false otherwise.
+ */
 function isPogoSnapshot(v: unknown): v is PogoSnapshot {
 	if (typeof v !== 'object' || v === null) return false;
 	if (!('title' in v) || typeof v.title !== 'string') return false;
@@ -63,6 +110,21 @@ function isPogoSnapshot(v: unknown): v is PogoSnapshot {
 	return true;
 }
 
+/**
+ * Checks the status of the service by launching a headless Chrome instance, navigating to the Downdetector page, and evaluating the presence of an outage.
+ *
+ * This function performs the following steps:
+ * 1. Finds a Chrome/Chromium executable on the system.
+ * 2. Creates a temporary user data directory for the Chrome instance.
+ * 3. Launches Chrome in headless mode with specific flags to avoid detection and enable remote debugging.
+ * 4. Waits for the Chrome DevTools Protocol (CDP) endpoint to become available.
+ * 5. Creates a new browser target pointing to the Downdetector URL.
+ * 6. Connects to the CDP WebSocket and sends commands to evaluate JavaScript on the page.
+ * 7. Parses the evaluation results to determine if an outage is reported.
+ * 8. Cleans up by killing the Chrome process and removing the temporary user data directory.
+ *
+ * @returns A promise that resolves to a Signal indicating whether the service is down and any relevant information, or an error if the check fails.
+ */
 async function check(): Promise<Signal> {
 	const chrome = findChrome();
 	if (!chrome) return { ok: false, error: 'no chromium/chrome binary found' };
@@ -211,4 +273,4 @@ async function check(): Promise<Signal> {
 	}
 }
 
-export default check;
+export { check as checkDownDetector, check as default };

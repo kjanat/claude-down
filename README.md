@@ -14,9 +14,9 @@
 You can run it directly using `bunx` or `npx`:
 
 ```bash
-bunx claude-down
+bunx claude-down status
 # or
-npx -y claude-down
+npx -y claude-down status
 ```
 
 Or install it globally:
@@ -31,10 +31,10 @@ npm install -g claude-down
 
 ### Human-readable summary
 
-The default command provides a status indicator, a brief description, and details from both sources.
+The `status` command provides a status indicator, a brief description, and details from both sources.
 
 ```bash
-claude-down
+claude-down status
 ```
 
 ### JSON output
@@ -42,7 +42,7 @@ claude-down
 Get structured data for scripts or monitoring tools.
 
 ```bash
-claude-down --json
+claude-down status --json
 ```
 
 ### Silent mode
@@ -50,7 +50,7 @@ claude-down --json
 Use for CI/CD or shell scripts where you only care about the exit code.
 
 ```bash
-claude-down -q
+claude-down status -q
 ```
 
 ### Specific source
@@ -63,9 +63,9 @@ claude-down anthropic
 claude-down downdetector
 
 # Using flags
-claude-down --source anthropic
+claude-down status --source anthropic
 # or
-claude-down -s downdetector
+claude-down status -s downdetector
 ```
 
 ## Browser Usage
