@@ -73,11 +73,11 @@ claude-down status -s downdetector
 `claude-down` provides a browser-safe entry point that only includes the Anthropic Statuspage source (since Downdetector requires a local Chromium binary).
 
 ```typescript
-import { checkAnthropic, fetchSummary } from 'claude-down/browser';
+import { checkAnthropic, fetchSummary } from "claude-down/browser";
 
 const status = await checkAnthropic();
 if (status.down) {
-	console.log('Claude is down:', status.reason);
+  console.log("Claude is down:", status.reason);
 }
 ```
 
