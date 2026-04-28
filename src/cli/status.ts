@@ -1,9 +1,8 @@
-import type { Out } from '@kjanat/dreamcli';
+import { CLIError, type Out } from '@kjanat/dreamcli';
 
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 import { EXIT_CODES } from '#claude-down/lib/constants.ts';
 import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
-import { toCLIError } from '#claude-down/lib/errors.ts';
 import type { Indicator } from '#claude-down/lib/types.ts';
 
 const sources = ['anthropic', 'downdetector'] as const;
@@ -110,9 +109,9 @@ function formatRow(row: StatusRow): string {
 async function checkAnthropicSource(anthropicStatusBase: string): Promise<SourceCheck> {
 	const result = await checkAnthropic(anthropicStatusBase);
 	if (result.kind === 'unknown') {
-		throw toCLIError({
+		throw new CLIError(`anthropic unavailable: ${result.reason}`, {
 			code: 'ANTHROPIC_UNAVAILABLE',
-			message: `anthropic unavailable: ${result.reason}`,
+			exitCode: EXIT_CODES.unavailable,
 			details: { anthropic: result.reason },
 		});
 	}
@@ -145,9 +144,9 @@ async function checkAnthropicSource(anthropicStatusBase: string): Promise<Source
 async function checkDowndetectorSource(): Promise<SourceCheck> {
 	const result = await checkDownDetector();
 	if (!result.ok) {
-		throw toCLIError({
+		throw new CLIError(`downdetector unavailable: ${result.error}`, {
 			code: 'DOWNDETECTOR_UNAVAILABLE',
-			message: `downdetector unavailable: ${result.error}`,
+			exitCode: EXIT_CODES.unavailable,
 			details: { downdetector: result.error },
 		});
 	}

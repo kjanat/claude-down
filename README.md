@@ -85,12 +85,12 @@ if (status.down) {
 
 The CLI returns specific exit codes based on the severity of the outage:
 
-| Code  | Status      | Description                                                   |
-| :---- | :---------- | :------------------------------------------------------------ |
-| **0** | Operational | Everything is working normally.                               |
-| **1** | Degraded    | Minor issues reported by Anthropic.                           |
-| **2** | Outage      | Major/critical outage or Downdetector reports Claude is down. |
-| **3** | Unknown     | Both status sources are unreachable.                          |
+|   Code | Status      | Description                                                   |
+| -----: | :---------- | :------------------------------------------------------------ |
+|  **0** | Operational | Everything is working normally.                               |
+|  **1** | Degraded    | Minor issues reported by Anthropic.                           |
+|  **2** | Outage      | Major/critical outage or Downdetector reports Claude is down. |
+| **21** | Unknown     | Both status sources are unreachable.                          |
 
 ## Development
 
