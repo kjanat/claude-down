@@ -33,6 +33,7 @@
 		"check": "biome check",
 		"fmt": "bunx dprint fmt",
 		"lint": "biome lint",
+		"local": "bun run build && bun link",
 		"prepublishOnly": "bun run build",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
