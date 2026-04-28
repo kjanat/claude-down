@@ -110,21 +110,95 @@ function isPogoSnapshot(v: unknown): v is PogoSnapshot {
 	return true;
 }
 
-/**
- * Checks the status of the service by launching a headless Chrome instance, navigating to the Downdetector page, and evaluating the presence of an outage.
- *
- * This function performs the following steps:
- * 1. Finds a Chrome/Chromium executable on the system.
- * 2. Creates a temporary user data directory for the Chrome instance.
- * 3. Launches Chrome in headless mode with specific flags to avoid detection and enable remote debugging.
- * 4. Waits for the Chrome DevTools Protocol (CDP) endpoint to become available.
- * 5. Creates a new browser target pointing to the Downdetector URL.
- * 6. Connects to the CDP WebSocket and sends commands to evaluate JavaScript on the page.
- * 7. Parses the evaluation results to determine if an outage is reported.
- * 8. Cleans up by killing the Chrome process and removing the temporary user data directory.
- *
- * @returns A promise that resolves to a Signal indicating whether the service is down and any relevant information, or an error if the check fails.
- */
+type CdpSend = (method: string, params?: Record<string, unknown>) => Promise<unknown>;
+
+async function waitForCdp(base: string, timeoutMs: number): Promise<boolean> {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		try {
+			const v = await fetch(`${base}/json/version`);
+			if (v.ok) return true;
+		} catch {
+			// retry
+		}
+		await sleep(100);
+	}
+	return false;
+}
+
+function createCdpConnection(ws: WebSocket): CdpSend {
+	const pending = new Map<number, (msg: unknown) => void>();
+	let msgId = 0;
+
+	ws.onmessage = (ev) => {
+		const text = typeof ev.data === 'string'
+			? ev.data
+			: ev.data instanceof ArrayBuffer
+			? new TextDecoder().decode(ev.data)
+			: null;
+		if (text === null) return;
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(text);
+		} catch {
+			return;
+		}
+		if (!isCdpMessage(parsed)) return;
+		const cb = pending.get(parsed.id);
+		if (cb) {
+			pending.delete(parsed.id);
+			cb(parsed);
+		}
+	};
+
+	return (method, params = {}) =>
+		new Promise((resolve, reject) => {
+			const id = ++msgId;
+			const timer = setTimeout(() => {
+				pending.delete(id);
+				reject(new Error(`CDP command '${method}' timed out`));
+			}, 5000);
+			pending.set(id, (msg) => {
+				clearTimeout(timer);
+				resolve(msg);
+			});
+			ws.send(JSON.stringify({ id, method, params }));
+		});
+}
+
+async function pollPogoSnapshot(
+	send: CdpSend,
+	timeoutMs: number,
+): Promise<{ pogo: { outage?: boolean }; heading: string | null } | null> {
+	await send('Runtime.enable');
+
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		const response = await send('Runtime.evaluate', {
+			expression:
+				'JSON.stringify({ title: document.title, pogo: window.PogoConfig ?? null, h1: document.querySelector("h1")?.innerText ?? null })',
+			returnByValue: true,
+		});
+		if (isCdpEvalResult(response)) {
+			let snapshot: unknown;
+			try {
+				snapshot = JSON.parse(response.result.result.value);
+			} catch {
+				snapshot = null;
+			}
+			if (
+				isPogoSnapshot(snapshot)
+				&& snapshot.pogo !== null
+				&& snapshot.title !== 'Just a moment...'
+			) {
+				return { pogo: snapshot.pogo, heading: snapshot.h1 };
+			}
+		}
+		await sleep(700);
+	}
+	return null;
+}
+
 async function check(): Promise<Signal> {
 	const chrome = findChrome();
 	if (!chrome) return { ok: false, error: 'no chromium/chrome binary found' };
@@ -158,21 +232,9 @@ async function check(): Promise<Signal> {
 		);
 
 		const base = `http://localhost:${port}`;
-		const cdpDeadline = Date.now() + 5000;
-		let cdpUp = false;
-		while (Date.now() < cdpDeadline) {
-			try {
-				const v = await fetch(`${base}/json/version`);
-				if (v.ok) {
-					cdpUp = true;
-					break;
-				}
-			} catch {
-				// retry
-			}
-			await sleep(100);
+		if (!await waitForCdp(base, 5000)) {
+			return { ok: false, error: 'CDP endpoint never came up' };
 		}
-		if (!cdpUp) return { ok: false, error: 'CDP endpoint never came up' };
 
 		const targetRes = await fetch(`${base}/json/new?${encodeURIComponent(DOWNDETECTOR_URL)}`, {
 			method: 'PUT',
@@ -183,85 +245,21 @@ async function check(): Promise<Signal> {
 		}
 
 		const ws = new WebSocket(targetJson.webSocketDebuggerUrl);
-		const pending = new Map<number, (msg: unknown) => void>();
-		ws.onmessage = (ev) => {
-			const text = typeof ev.data === 'string'
-				? ev.data
-				: ev.data instanceof ArrayBuffer
-				? new TextDecoder().decode(ev.data)
-				: null;
-			if (text === null) return;
-			let parsed: unknown;
-			try {
-				parsed = JSON.parse(text);
-			} catch {
-				return;
-			}
-			if (!isCdpMessage(parsed)) return;
-			const cb = pending.get(parsed.id);
-			if (cb) {
-				pending.delete(parsed.id);
-				cb(parsed);
-			}
-		};
+		const send = createCdpConnection(ws);
 		await new Promise<void>((resolve, reject) => {
 			ws.onopen = () => resolve();
 			ws.onerror = () => reject(new Error('WebSocket connection failed'));
 			ws.onclose = () => reject(new Error('WebSocket closed before opening'));
 		});
 
-		let msgId = 0;
-		const send = (method: string, params: Record<string, unknown> = {}): Promise<unknown> =>
-			new Promise((resolve, reject) => {
-				const id = ++msgId;
-				const timer = setTimeout(() => {
-					pending.delete(id);
-					reject(new Error(`CDP command '${method}' timed out`));
-				}, 5000);
-				pending.set(id, (msg) => {
-					clearTimeout(timer);
-					resolve(msg);
-				});
-				ws.send(JSON.stringify({ id, method, params }));
-			});
-
-		await send('Runtime.enable');
-
-		const deadline = Date.now() + 20000;
-		let pogo: { outage?: boolean } | null = null;
-		let heading: string | null = null;
-		while (Date.now() < deadline) {
-			const response = await send('Runtime.evaluate', {
-				expression:
-					'JSON.stringify({ title: document.title, pogo: window.PogoConfig ?? null, h1: document.querySelector("h1")?.innerText ?? null })',
-				returnByValue: true,
-			});
-			if (isCdpEvalResult(response)) {
-				let snapshot: unknown;
-				try {
-					snapshot = JSON.parse(response.result.result.value);
-				} catch {
-					snapshot = null;
-				}
-				if (
-					isPogoSnapshot(snapshot)
-					&& snapshot.pogo !== null
-					&& snapshot.title !== 'Just a moment...'
-				) {
-					pogo = snapshot.pogo;
-					heading = snapshot.h1;
-					break;
-				}
-			}
-			await sleep(700);
-		}
+		const result = await pollPogoSnapshot(send, 20000);
 		ws.close();
 
-		if (!pogo) {
+		if (!result) {
 			return { ok: false, error: 'CF challenge not cleared in time' };
 		}
-		if (pogo.outage === true) {
-			return { ok: true, down: true, reason: heading ?? 'outage reported' };
+		if (result.pogo.outage === true) {
+			return { ok: true, down: true, reason: result.heading ?? 'outage reported' };
 		}
 		return { ok: true, down: false };
 	} catch (e) {
