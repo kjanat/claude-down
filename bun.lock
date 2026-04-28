@@ -5,8 +5,8 @@
     "": {
       "name": "claude-down",
       "dependencies": {
-        "@kjanat/dreamcli": ">=2.1.0",
-        "statuspage.io": "3.5.0",
+        "@kjanat/dreamcli": "^2.1.0",
+        "statuspage.io": "^3.5.0",
       },
       "devDependencies": {
         "@biomejs/biome": "^2.4.13",

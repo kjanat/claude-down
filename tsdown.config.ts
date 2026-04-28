@@ -8,6 +8,7 @@ const defaultBuildOpts = {
 	platform: 'node',
 	unbundle: true,
 	minify: 'dce-only',
+	deps: { 'neverBundle': ['@kjanat/dreamcli'] },
 } satisfies UserConfig;
 
 export default defineConfig([
@@ -31,7 +32,7 @@ export default defineConfig([
 		...defaultBuildOpts,
 		entry: { browser: './src/browser.ts' },
 		dts: { entry: ['src/browser.ts'] },
-		deps: { alwaysBundle: ['statuspage.io'] },
+		deps: { alwaysBundle: ['statuspage.io'], 'neverBundle': ['@kjanat/dreamcli'] },
 		exports: true,
 		platform: 'browser',
 		outDir: 'dist/browser',

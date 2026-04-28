@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { cli, command, flag, middleware } from '@kjanat/dreamcli';
-import { exit, stdout } from 'node:process';
+import { env, exit, stdout } from 'node:process';
 import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from './index.ts';
 
 const sources = ['anthropic', 'downdetector'] as const;
@@ -49,8 +49,13 @@ function formatStatusRow(row: StatusRow): string {
 	return lines.join('\n');
 }
 
-export function formatStatusRows(rows: StatusRow[]): string {
+function formatStatusRows(rows: StatusRow[]): string {
 	return rows.map(formatStatusRow).join('\n\n');
+}
+
+function getAnthropicStatusBase(): string | undefined {
+	const baseUrl = env.CLAUDE_DOWN_ANTHROPIC_STATUS_BASE;
+	return baseUrl !== undefined && baseUrl.length > 0 ? baseUrl : undefined;
 }
 
 function renderResult(result: number | StatusRow[], out: Output): void {
@@ -69,13 +74,14 @@ function renderResult(result: number | StatusRow[], out: Output): void {
 async function main(
 	{ quiet, source }: { quiet: boolean; source: Source },
 ): Promise<number | StatusRow[]> {
+	const anthropicStatusBase = getAnthropicStatusBase();
 	const [dd, an] = await Promise.all([
 		source === 'anthropic'
 			? ({ ok: true, down: false } as const)
 			: checkDownDetector(),
 		source === 'downdetector'
 			? ({ kind: 'unknown', reason: 'skipped' } as const)
-			: checkAnthropic(),
+			: checkAnthropic(anthropicStatusBase),
 	]);
 
 	if (source === 'anthropic' && an.kind === 'unknown') {

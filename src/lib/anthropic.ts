@@ -3,11 +3,15 @@ import { Statuspage } from 'statuspage.io';
 import { ANTHROPIC_STATUS_BASE } from './constants.ts';
 import type { Result } from './types.ts';
 
-const client = new Statuspage('anthropic');
-client.setApiUrl(ANTHROPIC_STATUS_BASE);
+function createClient(baseUrl: string): Statuspage {
+	const client = new Statuspage('anthropic');
+	client.setApiUrl(baseUrl);
+	return client;
+}
 
-async function check(): Promise<Result> {
+async function check(baseUrl = ANTHROPIC_STATUS_BASE): Promise<Result> {
 	try {
+		const client = createClient(baseUrl);
 		const summary = await client.api.getSummary();
 		return { kind: 'ok', summary };
 	} catch (e) {
