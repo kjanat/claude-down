@@ -5,7 +5,6 @@ const defaultBuildOpts = {
 	dts: true,
 	exports: false,
 	format: 'es',
-	platform: 'node',
 	unbundle: false,
 	minify: true,
 } satisfies UserConfig;
@@ -15,6 +14,7 @@ export default defineConfig([
 		...defaultBuildOpts,
 		entry: 'src/index.ts',
 		dts: { entry: ['src/*.ts', '!src/main.ts', '!src/browser.ts'] },
+		platform: 'node',
 		outDir: 'dist',
 	},
 	{
@@ -22,6 +22,7 @@ export default defineConfig([
 		entry: { cli: 'src/main.ts' },
 		dts: false,
 		// exports: { bin: { 'claude-down': './src/main.ts' } },
+		platform: 'node',
 		outDir: 'dist/bin',
 	},
 	{

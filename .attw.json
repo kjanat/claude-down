@@ -1,0 +1,8 @@
+{
+	"$schema": "https://gist.githubusercontent.com/kjanat/46efa8c04bf3ed10c406d1965c546177/raw/attw.schema.json",
+	"format": "table-flipped",
+	"profile": "esm-only",
+	"emoji": false,
+	"pack": true,
+	"ignoreRules": []
+}

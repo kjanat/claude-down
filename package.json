@@ -1,7 +1,7 @@
 {
 	"name": "claude-down",
-	"version": "0.2.0",
-	"description": "Is claude code down?",
+	"version": "0.2.1",
+	"description": "Is claude code down? Probably...",
 	"homepage": "https://github.com/kjanat/claude-down#readme",
 	"bugs": {
 		"url": "https://github.com/kjanat/claude-down/issues"
@@ -11,7 +11,7 @@
 		"url": "git+https://github.com/kjanat/claude-down.git"
 	},
 	"license": "MIT",
-	"author": "Kaj Kowalski",
+	"author": "Kaj Kowalski <info@kajkowalski.nl> (https://github.com/kjanat)",
 	"type": "module",
 	"imports": {
 		"#claude-down": "./src/index.ts",
@@ -46,7 +46,7 @@
 		"lint": "biome lint",
 		"local": "bun run build -l warn && bun link",
 		"prepublishOnly": "bun run build -l warn",
-		"publishChecks": "e18e-cli analyze; attw -p; bunx publint --pack bun --strict",
+		"publishChecks": "e18e-cli analyze; attw; bunx publint --pack bun --strict",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	},
