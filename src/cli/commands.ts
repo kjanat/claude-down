@@ -12,6 +12,7 @@ import {
 	summarizeExitCode,
 } from '#claude-down/cli/status.ts';
 
+/** Checks Claude status across all configured sources (Anthropic + Downdetector). */
 const statusCommand = command('status')
 	.description('Check Claude status across Anthropic and Downdetector')
 	.example('status', 'Check all sources')
@@ -30,6 +31,7 @@ const statusCommand = command('status')
 		renderStatusResult(sortRows(results), out);
 	});
 
+/** Checks only the Anthropic status page. */
 const anthropicCommand = command('anthropic')
 	.description(`Check only ${sourceLabels.anthropic}`)
 	.example('anthropic', `Check only ${sourceLabels.anthropic}`)
@@ -44,6 +46,7 @@ const anthropicCommand = command('anthropic')
 		renderStatusResult([result.row], out);
 	});
 
+/** Checks only Downdetector for user-reported outages. */
 const downdetectorCommand = command('downdetector')
 	.description(`Check only ${sourceLabels.downdetector}`)
 	.example('downdetector', `Check only ${sourceLabels.downdetector}`)

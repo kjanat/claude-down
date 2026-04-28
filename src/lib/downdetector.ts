@@ -7,6 +7,14 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { BROWSER_CANDIDATES, DOWNDETECTOR_URL } from '#claude-down/lib/constants.ts';
 import type { Signal } from '#claude-down/lib/types.ts';
 
+/**
+ * Attempts to find the path to a Chrome or Chromium executable by checking common binary names.
+ *
+ * It uses the `which` command to check for the presence of each candidate browser in the system's PATH.
+ * If a valid browser is found, its path is returned; otherwise, null is returned.
+ *
+ * @returns {string | null} The path to the Chrome/Chromium executable, or null if not found.
+ */
 function findChrome(): string | null {
 	for (const name of BROWSER_CANDIDATES) {
 		const p = spawnSync('which', [name]);
@@ -17,6 +25,14 @@ function findChrome(): string | null {
 	return null;
 }
 
+/**
+ * Type guard to check if a given value conforms to the expected shape of a CDP target info object.
+ *
+ * This function verifies that the input is an object with a `webSocketDebuggerUrl` property of type string.
+ *
+ * @param v - The value to check.
+ * @returns True if the value is a valid target info object, false otherwise.
+ */
 function isTargetInfo(v: unknown): v is { webSocketDebuggerUrl: string } {
 	return (
 		v !== null
@@ -94,8 +110,16 @@ function isPogoSnapshot(v: unknown): v is PogoSnapshot {
 	return true;
 }
 
+/** Callback type for sending a CDP command and receiving its response. */
 type CdpSend = (method: string, params?: Record<string, unknown>) => Promise<unknown>;
 
+/**
+ * Polls the CDP HTTP endpoint until it responds successfully or the timeout expires.
+ *
+ * @param base - Base URL of the Chrome DevTools Protocol endpoint (e.g. `http://localhost:9222`).
+ * @param timeoutMs - Maximum time in milliseconds to wait for the endpoint to become available.
+ * @returns `true` if the endpoint responded before the deadline, `false` otherwise.
+ */
 async function waitForCdp(base: string, timeoutMs: number): Promise<boolean> {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
@@ -110,6 +134,15 @@ async function waitForCdp(base: string, timeoutMs: number): Promise<boolean> {
 	return false;
 }
 
+/**
+ * Wraps a WebSocket in a request/response layer for the Chrome DevTools Protocol.
+ *
+ * Incoming messages are matched to pending requests by their `id` field. The returned
+ * {@link CdpSend} function sends a JSON-RPC-style message and resolves with the response.
+ *
+ * @param ws - An open WebSocket connected to a CDP debugging target.
+ * @returns A function that sends CDP commands and returns their responses as promises.
+ */
 function createCdpConnection(ws: WebSocket): CdpSend {
 	const pending = new Map<number, (msg: unknown) => void>();
 	let msgId = 0;
@@ -150,6 +183,16 @@ function createCdpConnection(ws: WebSocket): CdpSend {
 		});
 }
 
+/**
+ * Repeatedly evaluates JavaScript in the page to extract Downdetector's Pogo configuration
+ * and heading text, waiting for the Cloudflare challenge to clear.
+ *
+ * Returns `null` if the challenge is not cleared before the timeout.
+ *
+ * @param send - CDP command sender obtained from {@link createCdpConnection}.
+ * @param timeoutMs - Maximum time in milliseconds to wait for the page to load past the challenge.
+ * @returns The extracted Pogo config and heading, or `null` on timeout.
+ */
 async function pollPogoSnapshot(
 	send: CdpSend,
 	timeoutMs: number,
@@ -183,6 +226,14 @@ async function pollPogoSnapshot(
 	return null;
 }
 
+/**
+ * Launches a headless Chrome instance, navigates to the Downdetector page for Claude AI,
+ * waits for the Cloudflare challenge to clear, and extracts the outage status.
+ *
+ * The browser and its temporary user data directory are cleaned up in all cases.
+ *
+ * @returns A {@link Signal} indicating whether an outage is reported, the service is up, or an error occurred.
+ */
 async function check(): Promise<Signal> {
 	const chrome = findChrome();
 	if (!chrome) return { ok: false, error: 'no chromium/chrome binary found' };
