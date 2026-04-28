@@ -20,9 +20,7 @@ const statusCommand = command('status')
 	.flag('quiet', quietFlag)
 	.flag('source', sourceSelectionFlag)
 	.action(async ({ flags, out }) => {
-		const results = await checkSources(flags.source, {
-			anthropicStatusBase: flags.anthropicStatusBase,
-		});
+		const results = await checkSources(flags.source, flags.anthropicStatusBase);
 		if (flags.quiet) {
 			const exitCode = summarizeExitCode(results);
 			if (exitCode !== 0) exit(exitCode);
@@ -37,9 +35,7 @@ const anthropicCommand = command('anthropic')
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const result = await checkSource('anthropic', {
-			anthropicStatusBase: flags.anthropicStatusBase,
-		});
+		const result = await checkSource('anthropic', flags.anthropicStatusBase);
 		if (flags.quiet) {
 			if (result.exitCode !== 0) exit(result.exitCode);
 			return;

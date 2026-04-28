@@ -51,14 +51,6 @@ type SourceCheck = Readonly<{
 	row: StatusRow;
 }>;
 
-type CheckOptions = Readonly<{
-	anthropicStatusBase: string;
-}>;
-
-const defaultCheckOptions: CheckOptions = {
-	anthropicStatusBase: ANTHROPIC_STATUS_BASE,
-};
-
 function isApiIndicator(value: string): value is Exclude<Indicator, 'unavailable'> {
 	return value === 'none' || value === 'minor' || value === 'major' || value === 'critical';
 }
@@ -131,8 +123,8 @@ function formatRow(row: StatusRow): string {
  * @returns A promise that resolves to a `SourceCheck` object with the exit code and status row for Anthropic.
  * @throws A CLI error if the Anthropic check fails, including details about the failure.
  */
-async function checkAnthropicSource(options: CheckOptions): Promise<SourceCheck> {
-	const result = await checkAnthropic(options.anthropicStatusBase);
+async function checkAnthropicSource(anthropicStatusBase: string): Promise<SourceCheck> {
+	const result = await checkAnthropic(anthropicStatusBase);
 	if (result.kind === 'unknown') {
 		throw toCLIError({
 			code: 'ANTHROPIC_UNAVAILABLE',
@@ -206,11 +198,11 @@ async function checkDowndetectorSource(): Promise<SourceCheck> {
  */
 async function checkSource(
 	source: Source,
-	options: CheckOptions = defaultCheckOptions,
+	anthropicStatusBase: string = ANTHROPIC_STATUS_BASE,
 ): Promise<SourceCheck> {
 	switch (source) {
 		case 'anthropic':
-			return checkAnthropicSource(options);
+			return checkAnthropicSource(anthropicStatusBase);
 		case 'downdetector':
 			return checkDowndetectorSource();
 	}
@@ -227,9 +219,9 @@ async function checkSource(
  */
 async function checkSources(
 	sources: readonly Source[],
-	options: CheckOptions = defaultCheckOptions,
+	anthropicStatusBase: string,
 ): Promise<readonly SourceCheck[]> {
-	return Promise.all(sources.map((source) => checkSource(source, options)));
+	return Promise.all(sources.map((source) => checkSource(source, anthropicStatusBase)));
 }
 
 /**
