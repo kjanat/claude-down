@@ -7,14 +7,6 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { BROWSER_CANDIDATES, DOWNDETECTOR_URL } from '#claude-down/lib/constants.ts';
 import type { Signal } from '#claude-down/lib/types.ts';
 
-/**
- * Attempts to find the path to a Chrome or Chromium executable by checking common binary names.
- *
- * It uses the `which` command to check for the presence of each candidate browser in the system's PATH.
- * If a valid browser is found, its path is returned; otherwise, null is returned.
- *
- * @returns {string | null} The path to the Chrome/Chromium executable, or null if not found.
- */
 function findChrome(): string | null {
 	for (const name of BROWSER_CANDIDATES) {
 		const p = spawnSync('which', [name]);
@@ -25,14 +17,6 @@ function findChrome(): string | null {
 	return null;
 }
 
-/**
- * Type guard to check if a given value conforms to the expected shape of a CDP target info object.
- *
- * This function verifies that the input is an object with a `webSocketDebuggerUrl` property of type string.
- *
- * @param v - The value to check.
- * @returns True if the value is a valid target info object, false otherwise.
- */
 function isTargetInfo(v: unknown): v is { webSocketDebuggerUrl: string } {
 	return (
 		v !== null
