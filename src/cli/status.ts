@@ -42,23 +42,16 @@ type SourceCheck = Readonly<{
 }>;
 
 /**
- * Narrows a raw string to a valid API indicator value.
- *
- * @param value - Raw indicator string from the API response.
- * @returns `true` if `value` is a recognised non-unavailable indicator.
- */
-function isApiIndicator(value: string): value is Exclude<Indicator, 'unavailable'> {
-	return value === 'none' || value === 'minor' || value === 'major' || value === 'critical';
-}
-
-/**
  * Coerces an arbitrary string into a valid indicator, defaulting unrecognised values to `'critical'`.
  *
- * @param value - Raw indicator string.
+ * @param value - Raw indicator string from the API response.
  * @returns A valid non-unavailable indicator.
  */
 function normalizeIndicator(value: string): Exclude<Indicator, 'unavailable'> {
-	return isApiIndicator(value) ? value : 'critical';
+	if (value === 'none' || value === 'minor' || value === 'major' || value === 'critical') {
+		return value;
+	}
+	return 'critical';
 }
 
 /**
@@ -233,4 +226,4 @@ export {
 	sources,
 	summarizeExitCode,
 };
-export type { Source, SourceCheck, StatusRow };
+export type { Source };
