@@ -5,6 +5,11 @@ import { exit, stdout } from 'node:process';
 import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from './index.ts';
 
 const sources = ['anthropic', 'downdetector'] as const;
+const sourceLabels = {
+	anthropic: 'Anthropic',
+	downdetector: 'Downdetector',
+} as const;
+
 type Source = (typeof sources)[number];
 type Indicator = keyof typeof EXIT_CODES;
 
@@ -16,9 +21,50 @@ type StatusRow = {
 	source: Source;
 	status: string;
 	details: string | null;
-	incidents?: unknown[] | null;
-	affected?: Array<{ status: string }> | null;
+	incidents?: Array<{ name: string; status: string }> | null;
+	affected?: Array<{ name: string; status: string }> | null;
 };
+
+type Output = {
+	jsonMode: boolean;
+	json(value: unknown): void;
+	log(message: string): void;
+};
+
+function formatStatusRow(row: StatusRow): string {
+	const lines = [`${sourceLabels[row.source]}: ${row.status}`];
+
+	if (row.details !== null) lines.push(`  ${row.details}`);
+	if (row.incidents !== null && row.incidents !== undefined) {
+		for (const incident of row.incidents) {
+			lines.push(`  incident: ${incident.name} [${incident.status}]`);
+		}
+	}
+	if (row.affected !== null && row.affected !== undefined) {
+		lines.push(
+			`  affected: ${row.affected.map(component => `${component.name} [${component.status}]`).join(', ')}`,
+		);
+	}
+
+	return lines.join('\n');
+}
+
+export function formatStatusRows(rows: StatusRow[]): string {
+	return rows.map(formatStatusRow).join('\n\n');
+}
+
+function renderResult(result: number | StatusRow[], out: Output): void {
+	if (typeof result === 'number') {
+		exit(result);
+	}
+
+	if (out.jsonMode) {
+		out.json(result);
+		return;
+	}
+
+	out.log(formatStatusRows(result));
+}
 
 async function main(
 	{ quiet, source }: { quiet: boolean; source: Source },
@@ -69,7 +115,7 @@ async function main(
 
 	const table: StatusRow[] = [];
 
-	if (!source || source === 'downdetector') {
+	if (source === 'downdetector') {
 		table.push({
 			source: 'downdetector',
 			status: dd.ok ? (dd.down ? 'down' : 'up') : 'error',
@@ -77,10 +123,10 @@ async function main(
 		});
 	}
 
-	if (!source || source === 'anthropic') {
+	if (source === 'anthropic') {
 		const ok = an.kind === 'ok';
 		const affected = ok
-			? an.summary.components.filter((c: { status: string }) => c.status !== 'operational')
+			? an.summary.components.filter(component => component.status !== 'operational')
 			: null;
 		table.push({
 			source: 'anthropic',
@@ -101,10 +147,7 @@ async function main(
 const withExitOrTable = middleware<{ exitOrTable: (result: number | StatusRow[]) => void }>(
 	({ out, next }) =>
 		next({
-			exitOrTable: (result: number | StatusRow[]) => {
-				if (typeof result === 'number') exit(result);
-				else out.table(result);
-			},
+			exitOrTable: (result: number | StatusRow[]) => renderResult(result, out),
 		}),
 );
 
