@@ -20,7 +20,7 @@ function createClient(baseUrl: string): Statuspage {
  * @param baseUrl - Optional base URL for the Anthropic Statuspage API. Defaults to a predefined constant.
  * @returns A promise that resolves to a Result object containing either the summary of the status or an error reason.
  */
-async function check(baseUrl = ANTHROPIC_STATUS_BASE): Promise<Result> {
+async function check(baseUrl: string = ANTHROPIC_STATUS_BASE): Promise<Result> {
 	try {
 		const client = createClient(baseUrl);
 		const summary = await client.api.getSummary();

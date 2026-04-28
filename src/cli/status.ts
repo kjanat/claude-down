@@ -1,10 +1,14 @@
 import type { Out } from '@kjanat/dreamcli';
 
-import type { Source } from '#claude-down/cli/flags.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
-import { EXIT_CODES } from '#claude-down/lib/constants.ts';
+import { ANTHROPIC_STATUS_BASE, EXIT_CODES } from '#claude-down/lib/constants.ts';
 import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
 import { toCLIError } from '#claude-down/lib/errors.ts';
+import type { Indicator } from '#claude-down/lib/types.ts';
+
+const sources = ['anthropic', 'downdetector'] as const;
+
+type Source = (typeof sources)[number];
 
 /** Mapping of sources to their display labels for output formatting. */
 const sourceLabels = {
@@ -12,8 +16,6 @@ const sourceLabels = {
 	downdetector: 'Downdetector',
 } as const satisfies Record<Source, string>;
 
-// "none" | "minor" | "major" | "critical" | "unavailable"
-type Indicator = keyof typeof EXIT_CODES;
 // "minor" | "major" | "critical" | "up"
 type AnthropicStatus = Exclude<Indicator, 'unavailable' | 'none'> | 'up';
 type DowndetectorStatus = 'up' | 'down';
@@ -50,11 +52,11 @@ type SourceCheck = Readonly<{
 }>;
 
 type CheckOptions = Readonly<{
-	anthropicStatusBase: string | undefined;
+	anthropicStatusBase: string;
 }>;
 
 const defaultCheckOptions: CheckOptions = {
-	anthropicStatusBase: undefined,
+	anthropicStatusBase: ANTHROPIC_STATUS_BASE,
 };
 
 function isApiIndicator(value: string): value is Exclude<Indicator, 'unavailable'> {
@@ -286,5 +288,5 @@ function renderStatusResult(rows: readonly StatusRow[], out: Out): void {
 	out.log(formatRows(rows));
 }
 
-export { checkSource, checkSources, renderStatusResult, sortRows, sourceLabels, summarizeExitCode };
-export type { SourceCheck, StatusRow };
+export { checkSource, checkSources, renderStatusResult, sortRows, sourceLabels, sources, summarizeExitCode };
+export type { Source, SourceCheck, StatusRow };
