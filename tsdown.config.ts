@@ -6,9 +6,8 @@ const defaultBuildOpts = {
 	exports: true,
 	format: 'es',
 	platform: 'node',
-	unbundle: true,
-	minify: 'dce-only',
-	deps: { 'neverBundle': ['@kjanat/dreamcli'] },
+	unbundle: false,
+	minify: true,
 } satisfies UserConfig;
 
 export default defineConfig([
@@ -25,18 +24,14 @@ export default defineConfig([
 		dts: false,
 		exports: { bin: { 'claude-down': './src/main.ts' } },
 		outDir: 'dist/bin',
-		unbundle: false,
-		minify: true,
 	},
 	{
 		...defaultBuildOpts,
 		entry: { browser: './src/browser.ts' },
 		dts: { entry: ['src/browser.ts'] },
-		deps: { alwaysBundle: ['statuspage.io'], 'neverBundle': ['@kjanat/dreamcli'] },
+		// deps: { alwaysBundle: ['statuspage.io'], neverBundle: ['@kjanat/dreamcli'] },
 		exports: true,
 		platform: 'browser',
 		outDir: 'dist/browser',
-		unbundle: false,
-		minify: true,
 	},
 ]);

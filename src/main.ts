@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
+import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from '#claude-down';
 import { cli, command, flag, middleware } from '@kjanat/dreamcli';
 import { env, exit, stdout } from 'node:process';
-import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from './index.ts';
 
 const sources = ['anthropic', 'downdetector'] as const;
 const sourceLabels = {
@@ -31,20 +31,33 @@ type Output = {
 	log(message: string): void;
 };
 
-function formatStatusRow(row: StatusRow): string {
-	const lines = [`${sourceLabels[row.source]}: ${row.status}`];
+function formatList(lines: string[], label: string, items: string[]): void {
+	if (items.length === 0) return;
 
-	if (row.details !== null) lines.push(`  ${row.details}`);
-	if (row.incidents !== null && row.incidents !== undefined) {
-		for (const incident of row.incidents) {
-			lines.push(`  incident: ${incident.name} [${incident.status}]`);
-		}
+	lines.push(`  ${label}:`);
+	for (const item of items) {
+		lines.push(`    - ${item}`);
 	}
-	if (row.affected !== null && row.affected !== undefined) {
-		lines.push(
-			`  affected: ${row.affected.map(component => `${component.name} [${component.status}]`).join(', ')}`,
-		);
+}
+
+function formatStatusRow(row: StatusRow): string {
+	const lines: string[] = [sourceLabels[row.source]];
+
+	if (row.status === 'error') {
+		lines.push(`  Unavailable${row.details === null ? '' : `: ${row.details}`}`);
+		return lines.join('\n');
 	}
+
+	if (row.source === 'downdetector') {
+		lines.push(`  ${row.details ?? 'No user-reported issues'}`);
+		return lines.join('\n');
+	}
+
+	lines.push(`  ${row.details ?? 'All systems operational'}`);
+
+	const incidents = row.incidents?.map((incident) => `${incident.name} (${incident.status})`) ?? [];
+	formatList(lines, incidents.length === 1 ? 'Active incident' : 'Active incidents', incidents);
+	formatList(lines, 'Affected components', row.affected?.map((component) => component.name) ?? []);
 
 	return lines.join('\n');
 }

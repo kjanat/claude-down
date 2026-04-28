@@ -1,8 +1,5 @@
-import assert from 'node:assert/strict';
-import { once } from 'node:events';
-import { readFile } from 'node:fs/promises';
-import { createServer, type Server } from 'node:http';
-import { after, before, beforeEach, describe, test } from 'node:test';
+import { file } from 'bun';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test';
 
 import checkAnthropic from '#claude-down/lib/anthropic.ts';
 import { claudeDown } from '#claude-down/main.ts';
@@ -13,43 +10,37 @@ const anthropicStatusBaseEnv = 'CLAUDE_DOWN_ANTHROPIC_STATUS_BASE';
 type FixtureServer = {
 	baseUrl: string;
 	requests: string[];
-	stop(): Promise<void>;
+	stop(): void;
 };
 
 async function startSummaryFixtureServer(summaryBody: string): Promise<FixtureServer> {
 	const requests: string[] = [];
-	const server = createServer((req, res) => {
-		requests.push(req.url ?? '');
+	const server = Bun.serve({
+		hostname: '127.0.0.1',
+		port: 0,
+		fetch(req) {
+			const url = new URL(req.url);
+			requests.push(url.pathname);
 
-		if (req.method === 'GET' && req.url === '/api/v2/summary.json') {
-			res.writeHead(200, { 'content-type': 'application/json' });
-			res.end(summaryBody);
-			return;
-		}
+			if (req.method === 'GET' && url.pathname === '/api/v2/summary.json') {
+				return new Response(summaryBody, {
+					status: 200,
+					headers: { 'content-type': 'application/json' },
+				});
+			}
 
-		res.writeHead(404, { 'content-type': 'text/plain' });
-		res.end('not found');
+			return new Response('not found', {
+				status: 404,
+				headers: { 'content-type': 'text/plain' },
+			});
+		},
 	});
 
-	server.listen(0, '127.0.0.1');
-	await once(server, 'listening');
-
-	const address = server.address();
-	if (address === null || typeof address === 'string') {
-		await closeServer(server);
-		throw new Error('fixture server did not expose a TCP address');
-	}
-
 	return {
-		baseUrl: `http://127.0.0.1:${address.port}`,
+		baseUrl: server.url.origin,
 		requests,
-		stop: () => closeServer(server),
+		stop: () => server.stop(true),
 	};
-}
-
-async function closeServer(server: Server): Promise<void> {
-	server.close();
-	await once(server, 'close');
 }
 
 async function withAnthropicStatusBase<T>(baseUrl: string, run: () => Promise<T>): Promise<T> {
@@ -67,57 +58,74 @@ async function withAnthropicStatusBase<T>(baseUrl: string, run: () => Promise<T>
 	}
 }
 
+function requireFixtureServer(fixtureServer: FixtureServer | undefined): FixtureServer {
+	if (fixtureServer === undefined) {
+		throw new Error('fixture server not started');
+	}
+	return fixtureServer;
+}
+
 describe('Anthropic status fixture', () => {
 	let fixtureBody = '';
-	let fixtureServer: FixtureServer;
+	let fixtureServer: FixtureServer | undefined;
 
-	before(async () => {
-		fixtureBody = await readFile(anthropicFixtureUrl, 'utf8');
+	beforeAll(async () => {
+		fixtureBody = await file(anthropicFixtureUrl).text();
 		fixtureServer = await startSummaryFixtureServer(fixtureBody);
 	});
 
-	after(async () => {
-		await fixtureServer.stop();
+	afterAll(async () => {
+		if (fixtureServer !== undefined) {
+			fixtureServer.stop();
+		}
 	});
 
 	beforeEach(() => {
-		fixtureServer.requests.length = 0;
+		requireFixtureServer(fixtureServer).requests.length = 0;
 	});
 
 	test('checkAnthropic parses the raw summary fixture', async () => {
-		const result = await checkAnthropic(fixtureServer.baseUrl);
+		const server = requireFixtureServer(fixtureServer);
+		const result = await checkAnthropic(server.baseUrl);
 
-		assert.equal(result.kind, 'ok');
-		if (result.kind !== 'ok') return;
+		expect(result.kind).toBe('ok');
+		if (result.kind !== 'ok') {
+			throw new Error(`expected ok result, got ${result.kind}`);
+		}
 
-		assert.equal(result.summary.status.indicator, 'major');
-		assert.equal(result.summary.status.description, 'Partial System Outage');
-		assert.equal(result.summary.incidents[0]?.name, 'Claude.ai unavailable and elevated errors on the API');
-		assert.deepEqual(
+		expect(result.summary.status.indicator).toBe('major');
+		expect(result.summary.status.description).toBe('Partial System Outage');
+		expect(result.summary.incidents[0]?.name).toBe('Claude.ai unavailable and elevated errors on the API');
+		expect(
 			result.summary.components
 				.filter(component => component.status !== 'operational')
 				.map(component => component.name),
-			['claude.ai', 'Claude API (api.anthropic.com)', 'Claude Code', 'Claude Cowork'],
-		);
-		assert.deepEqual(fixtureServer.requests, ['/api/v2/summary.json']);
+		).toEqual(['claude.ai', 'Claude API (api.anthropic.com)', 'Claude Code', 'Claude Cowork']);
+		expect(server.requests).toEqual(['/api/v2/summary.json']);
 	});
 
 	test('CLI anthropic subcommand renders human output from the fixture server', async () => {
+		const server = requireFixtureServer(fixtureServer);
 		const result = await withAnthropicStatusBase(
-			fixtureServer.baseUrl,
+			server.baseUrl,
 			() => claudeDown.execute(['anthropic']),
 		);
 
-		assert.equal(result.exitCode, 0);
-		assert.deepEqual(result.stderr, []);
-		assert.deepEqual(result.stdout, [
-			[
-				'Anthropic: major',
-				'  Partial System Outage',
-				'  incident: Claude.ai unavailable and elevated errors on the API [identified]',
-				'  affected: claude.ai [major_outage], Claude API (api.anthropic.com) [partial_outage], Claude Code [partial_outage], Claude Cowork [major_outage]',
-			].join('\n') + '\n',
+		expect(result.exitCode).toBe(0);
+		expect(result.stderr).toEqual([]);
+		expect(result.stdout).toEqual([
+			`\
+Anthropic
+  Partial System Outage
+  Active incident:
+    - Claude.ai unavailable and elevated errors on the API (identified)
+  Affected components:
+    - claude.ai
+    - Claude API (api.anthropic.com)
+    - Claude Code
+    - Claude Cowork
+`,
 		]);
-		assert.deepEqual(fixtureServer.requests, ['/api/v2/summary.json']);
+		expect(server.requests).toEqual(['/api/v2/summary.json']);
 	});
 });
