@@ -1,7 +1,7 @@
 import type { Out } from '@kjanat/dreamcli';
 
 import { checkAnthropic, checkDownDetector, EXIT_CODES, toCLIError } from '#claude-down';
-import { env, exit } from 'node:process';
+import { exit } from 'node:process';
 
 import type { Source } from './flags.ts';
 
@@ -45,6 +45,14 @@ type SourceCheck = Readonly<{
 	row: StatusRow;
 }>;
 
+type CheckOptions = Readonly<{
+	anthropicStatusBase: string | undefined;
+}>;
+
+const defaultCheckOptions: CheckOptions = {
+	anthropicStatusBase: undefined,
+};
+
 function isApiIndicator(value: string): value is Exclude<Indicator, 'unavailable'> {
 	return value === 'none' || value === 'minor' || value === 'major' || value === 'critical';
 }
@@ -79,13 +87,8 @@ function formatRow(row: StatusRow): string {
 	return lines.join('\n');
 }
 
-function getAnthropicStatusBase(): string | undefined {
-	const baseUrl = env.CLAUDE_DOWN_ANTHROPIC_STATUS_BASE;
-	return baseUrl !== undefined && baseUrl.length > 0 ? baseUrl : undefined;
-}
-
-async function checkAnthropicSource(): Promise<SourceCheck> {
-	const result = await checkAnthropic(getAnthropicStatusBase());
+async function checkAnthropicSource(options: CheckOptions): Promise<SourceCheck> {
+	const result = await checkAnthropic(options.anthropicStatusBase);
 	if (result.kind === 'unknown') {
 		throw toCLIError({
 			code: 'ANTHROPIC_UNAVAILABLE',
@@ -133,17 +136,23 @@ async function checkDowndetectorSource(): Promise<SourceCheck> {
 	};
 }
 
-async function checkSource(source: Source): Promise<SourceCheck> {
+async function checkSource(
+	source: Source,
+	options: CheckOptions = defaultCheckOptions,
+): Promise<SourceCheck> {
 	switch (source) {
 		case 'anthropic':
-			return checkAnthropicSource();
+			return checkAnthropicSource(options);
 		case 'downdetector':
 			return checkDowndetectorSource();
 	}
 }
 
-async function checkSources(sources: readonly Source[]): Promise<readonly SourceCheck[]> {
-	return Promise.all(sources.map((source) => checkSource(source)));
+async function checkSources(
+	sources: readonly Source[],
+	options: CheckOptions = defaultCheckOptions,
+): Promise<readonly SourceCheck[]> {
+	return Promise.all(sources.map((source) => checkSource(source, options)));
 }
 
 function summarizeExitCode(results: readonly SourceCheck[]): number {

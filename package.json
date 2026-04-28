@@ -19,14 +19,25 @@
 		"#test/*": "./test/*"
 	},
 	"exports": {
-		".": "./dist/index.mjs",
-		"./browser": "./dist/browser/browser.js",
-		"./cli": "./dist/bin/cli.mjs",
+		".": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		},
+		"./browser": {
+			"types": "./dist/browser/browser.d.ts",
+			"default": "./dist/browser/browser.js"
+		},
 		"./package.json": "./package.json"
 	},
 	"bin": {
 		"claude-down": "./dist/bin/cli.mjs"
 	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE",
+		"package.json"
+	],
 	"scripts": {
 		"bd": "bun run build",
 		"build": "tsdown",
@@ -35,6 +46,7 @@
 		"lint": "biome lint",
 		"local": "bun run build -l warn && bun link",
 		"prepublishOnly": "bun run build -l warn",
+		"publishChecks": "e18e-cli analyze; attw -p; bunx publint --pack bun --strict",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	},

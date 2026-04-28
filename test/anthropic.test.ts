@@ -6,7 +6,7 @@ import checkAnthropic from '#claude-down/lib/anthropic.ts';
 import { anthropicCommand, statusCommand } from '#claude-down/main.ts';
 
 const anthropicFixtureUrl = new URL(import.meta.resolve('#test/fixtures/anthropic-down.json'));
-const anthropicStatusBaseEnv = 'CLAUDE_DOWN_ANTHROPIC_STATUS_BASE';
+const anthropicStatusBaseEnvVar = 'CLAUDE_DOWN_ANTHROPIC_STATUS_BASE';
 
 type FixtureServer = {
 	baseUrl: string;
@@ -42,21 +42,6 @@ async function startSummaryFixtureServer(summaryBody: string): Promise<FixtureSe
 		requests,
 		stop: () => server.stop(true),
 	};
-}
-
-async function withAnthropicStatusBase<T>(baseUrl: string, run: () => Promise<T>): Promise<T> {
-	const previous = process.env[anthropicStatusBaseEnv];
-	process.env[anthropicStatusBaseEnv] = baseUrl;
-
-	try {
-		return await run();
-	} finally {
-		if (previous === undefined) {
-			delete process.env[anthropicStatusBaseEnv];
-		} else {
-			process.env[anthropicStatusBaseEnv] = previous;
-		}
-	}
 }
 
 function requireFixtureServer(fixtureServer: FixtureServer | undefined): FixtureServer {
@@ -107,10 +92,12 @@ describe('Anthropic status fixture', () => {
 
 	test('CLI anthropic subcommand renders human output from the fixture server', async () => {
 		const server = requireFixtureServer(fixtureServer);
-		const result = await withAnthropicStatusBase(
-			server.baseUrl,
-			() => runCommand(anthropicCommand, [], { isTTY: true }),
-		);
+		const result = await runCommand(anthropicCommand, [], {
+			env: {
+				[anthropicStatusBaseEnvVar]: server.baseUrl,
+			},
+			isTTY: true,
+		});
 
 		expect(result.exitCode).toBe(0);
 		expect(result.stderr).toEqual([]);
@@ -132,10 +119,11 @@ Anthropic
 
 	test('status command emits JSON rows when stdout is not a tty', async () => {
 		const server = requireFixtureServer(fixtureServer);
-		const result = await withAnthropicStatusBase(
-			server.baseUrl,
-			() => runCommand(statusCommand, ['--source', 'anthropic']),
-		);
+		const result = await runCommand(statusCommand, ['--source', 'anthropic'], {
+			env: {
+				[anthropicStatusBaseEnvVar]: server.baseUrl,
+			},
+		});
 
 		expect(result.exitCode).toBe(0);
 		expect(result.stderr).toEqual([]);

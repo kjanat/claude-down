@@ -3,7 +3,7 @@ import { defineConfig, type UserConfig } from 'tsdown';
 const defaultBuildOpts = {
 	clean: true,
 	dts: true,
-	exports: true,
+	exports: false,
 	format: 'es',
 	platform: 'node',
 	unbundle: false,
@@ -15,14 +15,13 @@ export default defineConfig([
 		...defaultBuildOpts,
 		entry: 'src/index.ts',
 		dts: { entry: ['src/*.ts', '!src/main.ts', '!src/browser.ts'] },
-		exports: true,
 		outDir: 'dist',
 	},
 	{
 		...defaultBuildOpts,
 		entry: { cli: 'src/main.ts' },
 		dts: false,
-		exports: { bin: { 'claude-down': './src/main.ts' } },
+		// exports: { bin: { 'claude-down': './src/main.ts' } },
 		outDir: 'dist/bin',
 	},
 	{
@@ -30,7 +29,6 @@ export default defineConfig([
 		entry: { browser: './src/browser.ts' },
 		dts: { entry: ['src/browser.ts'] },
 		// deps: { alwaysBundle: ['statuspage.io'], neverBundle: ['@kjanat/dreamcli'] },
-		exports: true,
 		platform: 'browser',
 		outDir: 'dist/browser',
 	},
