@@ -68,7 +68,8 @@ describe('Anthropic status fixture', () => {
 	});
 
 	beforeEach(() => {
-		requireFixtureServer(fixtureServer).requests.length = 0;
+		const srv = requireFixtureServer(fixtureServer);
+		srv.requests.splice(0);
 	});
 
 	test('checkAnthropic parses the raw summary fixture', async () => {
