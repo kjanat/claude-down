@@ -3,7 +3,8 @@ import { exit } from 'node:process';
 
 import { anthropicStatusBaseFlag, quietFlag, sourceSelectionFlag } from '#claude-down/cli/flags.ts';
 import {
-	checkSource,
+	checkAnthropicSource,
+	checkDowndetectorSource,
 	checkSources,
 	renderStatusResult,
 	sortRows,
@@ -35,7 +36,7 @@ const anthropicCommand = command('anthropic')
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const result = await checkSource('anthropic', flags.anthropicStatusBase);
+		const result = await checkAnthropicSource(flags.anthropicStatusBase);
 		if (flags.quiet) {
 			if (result.exitCode !== 0) exit(result.exitCode);
 			return;
@@ -48,7 +49,7 @@ const downdetectorCommand = command('downdetector')
 	.example('downdetector', `Check only ${sourceLabels.downdetector}`)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const result = await checkSource('downdetector');
+		const result = await checkDowndetectorSource();
 		if (flags.quiet) {
 			if (result.exitCode !== 0) exit(result.exitCode);
 			return;
