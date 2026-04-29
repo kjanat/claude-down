@@ -1,6 +1,6 @@
 import { flag } from '@kjanat/dreamcli';
 
-import { sources } from '#claude-down/cli/status.ts';
+import { sources } from '#claude-down/cli/model.ts';
 import { ANTHROPIC_STATUS_BASE } from '#claude-down/lib/constants.ts';
 
 /** Suppresses all output; the process exit code conveys the status instead. */

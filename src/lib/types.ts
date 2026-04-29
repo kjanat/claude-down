@@ -3,6 +3,7 @@ import type { Summary } from 'statuspage.io';
 
 /** Indicator represents the specific status code or condition that can be used to determine the state of a service. */
 type Indicator = keyof typeof EXIT_CODES;
+type AvailableIndicator = Exclude<Indicator, 'unavailable'>;
 
 /** A signal represents the outcome of a status check, indicating whether the service is down and providing relevant information. */
 type Signal =
@@ -15,4 +16,4 @@ type Result =
 	| { kind: 'ok'; summary: Summary }
 	| { kind: 'unknown'; reason: string };
 
-export type { Indicator, Result, Signal, Summary };
+export type { AvailableIndicator, Indicator, Result, Signal, Summary };

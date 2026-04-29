@@ -1,18 +1,28 @@
-import { command } from '@kjanat/dreamcli';
+import { command, type Out } from '@kjanat/dreamcli';
 import { exit } from 'node:process';
 
 import { anthropicStatusBaseFlag, quietFlag, sourceSelectionFlag } from '#claude-down/cli/flags.ts';
+import { sourceLabels } from '#claude-down/cli/model.ts';
+import type { StatusRow } from '#claude-down/cli/model.ts';
+import { renderStatusRows } from '#claude-down/cli/render.ts';
 import {
 	checkAnthropicSource,
 	checkDowndetectorSource,
 	checkSources,
-	renderStatusResult,
 	sortRows,
-	sourceLabels,
 	summarizeExitCode,
 } from '#claude-down/cli/status.ts';
 
-/** Checks Claude status across all configured sources (Anthropic + Downdetector). */
+function finishStatus(rows: readonly StatusRow[], quiet: boolean, out: Out): void {
+	if (quiet) {
+		const exitCode = summarizeExitCode(rows);
+		if (exitCode !== 0) exit(exitCode);
+		return;
+	}
+
+	renderStatusRows(sortRows(rows), out);
+}
+
 const statusCommand = command('status')
 	.description('Check Claude status across Anthropic and Downdetector')
 	.example('status', 'Check all sources')
@@ -22,42 +32,27 @@ const statusCommand = command('status')
 	.flag('quiet', quietFlag)
 	.flag('source', sourceSelectionFlag)
 	.action(async ({ flags, out }) => {
-		const results = await checkSources(flags.source, flags.anthropicStatusBase);
-		if (flags.quiet) {
-			const exitCode = summarizeExitCode(results);
-			if (exitCode !== 0) exit(exitCode);
-			return;
-		}
-		renderStatusResult(sortRows(results), out);
+		const rows = await checkSources(flags.source, flags.anthropicStatusBase);
+		finishStatus(rows, flags.quiet, out);
 	});
 
-/** Checks only the Anthropic status page. */
 const anthropicCommand = command('anthropic')
 	.description(`Check only ${sourceLabels.anthropic}`)
 	.example('anthropic', `Check only ${sourceLabels.anthropic}`)
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const result = await checkAnthropicSource(flags.anthropicStatusBase);
-		if (flags.quiet) {
-			if (result.exitCode !== 0) exit(result.exitCode);
-			return;
-		}
-		renderStatusResult([result.row], out);
+		const row = await checkAnthropicSource(flags.anthropicStatusBase);
+		finishStatus([row], flags.quiet, out);
 	});
 
-/** Checks only Downdetector for user-reported outages. */
 const downdetectorCommand = command('downdetector')
 	.description(`Check only ${sourceLabels.downdetector}`)
 	.example('downdetector', `Check only ${sourceLabels.downdetector}`)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const result = await checkDowndetectorSource();
-		if (flags.quiet) {
-			if (result.exitCode !== 0) exit(result.exitCode);
-			return;
-		}
-		renderStatusResult([result.row], out);
+		const row = await checkDowndetectorSource();
+		finishStatus([row], flags.quiet, out);
 	});
 
 export { anthropicCommand, downdetectorCommand, statusCommand };
