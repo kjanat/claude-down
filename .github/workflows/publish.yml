@@ -9,5 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
-      - run: bun i; bun i -g npm@latest
-      - run: bun publish --access public
+      - uses: actions/setup-node@v6
+        with: { node-version: latest, registry-url: https://registry.npmjs.org }
+      - run: bun install --frozen-lockfile
+      - run: npm publish --access public --provenance
