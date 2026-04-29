@@ -1,0 +1,12 @@
+---
+name: publish to npm
+on: { push: { tags: ["v*"] } }
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: { name: npm, url: https://www.npmjs.com/package/claude-down }
+    # oicd token is required to publish to npm
+    permissions: { contents: "read", id-token: "write" }
+    steps:
+      - uses: actions/checkout@v6
+      - run: bun publish --access public
