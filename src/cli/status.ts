@@ -1,5 +1,3 @@
-import { CLIError } from '@kjanat/dreamcli';
-
 import type { Source, StatusRow } from '#claude-down/cli/model.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 import { EXIT_CODES } from '#claude-down/lib/constants.ts';
@@ -17,11 +15,13 @@ function normalizeIndicator(value: string): AvailableIndicator {
 async function checkAnthropicSource(anthropicStatusBase: string): Promise<StatusRow> {
 	const result = await checkAnthropic(anthropicStatusBase);
 	if (result.kind === 'unknown') {
-		throw new CLIError(`anthropic unavailable: ${result.reason}`, {
-			code: 'ANTHROPIC_UNAVAILABLE',
-			exitCode: EXIT_CODES.unavailable,
-			details: { anthropic: result.reason },
-		});
+		return {
+			source: 'anthropic',
+			indicator: 'unavailable',
+			summaryText: result.reason,
+			incidents: null,
+			affectedComponents: null,
+		};
 	}
 
 	const indicator = normalizeIndicator(result.summary.status.indicator);
@@ -45,11 +45,12 @@ async function checkAnthropicSource(anthropicStatusBase: string): Promise<Status
 async function checkDowndetectorSource(): Promise<StatusRow> {
 	const result = await checkDownDetector();
 	if (!result.ok) {
-		throw new CLIError(`downdetector unavailable: ${result.error}`, {
-			code: 'DOWNDETECTOR_UNAVAILABLE',
-			exitCode: EXIT_CODES.unavailable,
-			details: { downdetector: result.error },
-		});
+		return {
+			source: 'downdetector',
+			indicator: 'unavailable',
+			summaryText: result.error,
+			reportsOutage: false,
+		};
 	}
 
 	return {
