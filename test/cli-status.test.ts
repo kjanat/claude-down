@@ -1,14 +1,14 @@
-import { ExitError } from '@kjanat/dreamcli/runtime';
-import { createTestAdapter, runCommand } from '@kjanat/dreamcli/testkit';
-import { describe, expect, test } from 'bun:test';
-import pkg from 'claude-down/package.json' with { type: 'json' };
-
 import { anthropicCommand, statusCommand } from '#claude-down/cli/commands.ts';
 import { claudeDown } from '#claude-down/cli/index.ts';
 import {
 	anthropicStatusBaseEnvVar,
 	withSummaryFixture,
 } from '#test/support/statuspage-fixture.ts';
+import { ExitError } from '@kjanat/dreamcli/runtime';
+import { createTestAdapter, runCommand } from '@kjanat/dreamcli/testkit';
+import { serve } from 'bun';
+import { describe, expect, test } from 'bun:test';
+import pkg from 'claude-down/package.json' with { type: 'json' };
 
 function downOutputRow() {
 	return [
@@ -55,7 +55,7 @@ const DIM = '\x1b[2m';
 async function withClosedPort<T>(
 	run: (baseUrl: string) => Promise<T>,
 ): Promise<T> {
-	const probe = Bun.serve({
+	const probe = serve({
 		hostname: '127.0.0.1',
 		port: 0,
 		fetch: () => new Response(),

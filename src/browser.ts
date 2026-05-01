@@ -1,8 +1,9 @@
+/** biome-ignore-all lint/performance/noBarrelFile: barrel */
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 
-const claudeDown = { checkAnthropic };
+export default { checkAnthropic };
 
-export { checkAnthropic, claudeDown as default };
+export { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 export type {
 	AvailableIndicator,
 	ComponentStatus,

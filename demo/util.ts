@@ -55,7 +55,7 @@ function escapeHtml(value: unknown): string {
  * @returns A string that is a valid CSS token.
  */
 function cssToken(value: unknown): string {
-	return String(value).replaceAll(/[^\w-]/g, '');
+	return String(value).replaceAll(/[^\w-]/gu, '');
 }
 
 /** Retrieves a string value from the given input, returning a
@@ -69,33 +69,6 @@ function cssToken(value: unknown): string {
  */
 function getString(value: unknown, fallback = ''): string {
 	return typeof value === 'string' ? value : fallback;
-}
-
-/** Retrieves a date value from a record using either `camelCase` or
- * `snake_case` keys, returning the value if it's a string, number,
- * or Date, or the current date if not.
- * @param record - The record object to retrieve the date value from.
- * @param camelKey - The camelCase key to look for in the record.
- * @param snakeKey - The snake_case key to look for in the record.
- * @returns The date value from the record if it's a string, number,
- * or Date, otherwise the current date.
- */
-function getDateValue(
-	record: Record<string, unknown>,
-	camelKey: string,
-	snakeKey: string,
-): string | number | Date {
-	const value = record[camelKey] ?? record[snakeKey];
-
-	if (
-		typeof value === 'string'
-		|| typeof value === 'number'
-		|| value instanceof Date
-	) {
-		return value;
-	}
-
-	return new Date();
 }
 
 /** Retrieves an error message from an unknown error object,
@@ -121,12 +94,4 @@ function fmt(value: string | number | Date): string {
 	});
 }
 
-export {
-	cssToken,
-	escapeHtml,
-	fmt,
-	getDateValue,
-	getErrorMessage,
-	getString,
-	isRecord,
-};
+export { cssToken, escapeHtml, fmt, getErrorMessage, getString, isRecord };

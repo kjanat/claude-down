@@ -1,4 +1,4 @@
-import { file } from 'bun';
+import { file, serve } from 'bun';
 
 const anthropicStatusBaseEnvVar = 'CLAUDE_DOWN_ANTHROPIC_STATUS_BASE';
 const cacheControlHeader =
@@ -23,7 +23,7 @@ async function startSummaryFixtureServer(
 	summaryBody: string,
 ): Promise<FixtureServer> {
 	const requests: string[] = [];
-	const server = Bun.serve({
+	const server = serve({
 		hostname: '127.0.0.1',
 		port: 0,
 		fetch(req) {

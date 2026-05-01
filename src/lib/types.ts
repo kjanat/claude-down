@@ -41,5 +41,6 @@ export type {
 	Indicator,
 	Result,
 	Signal,
-	Summary,
 };
+
+export type { Summary } from 'statuspage.io';

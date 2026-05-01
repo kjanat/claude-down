@@ -1,6 +1,5 @@
-import { setTimeout as sleep } from 'node:timers/promises';
-
 import type { CdpSend } from '#claude-down/lib/downdetector/cdp.ts';
+import { setTimeout } from 'node:timers/promises';
 
 type PogoSnapshot = {
 	title: string;
@@ -38,10 +37,11 @@ function isPogoSnapshot(value: unknown): value is PogoSnapshot {
 		return false;
 	}
 	if (!('pogo' in value)) return false;
-	if (value.pogo === null) return true;
-	if (typeof value.pogo !== 'object') return false;
+	const { pogo } = value;
 
-	const pogo = value.pogo;
+	if (pogo === null) return true;
+	if (typeof pogo !== 'object') return false;
+
 	if (
 		'outage' in pogo && pogo.outage !== undefined
 		&& typeof pogo.outage !== 'boolean'
@@ -49,7 +49,6 @@ function isPogoSnapshot(value: unknown): value is PogoSnapshot {
 
 	return true;
 }
-
 async function pollPogoSnapshot(
 	send: CdpSend,
 	timeoutMs: number,
@@ -59,8 +58,12 @@ async function pollPogoSnapshot(
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
 		const response = await send('Runtime.evaluate', {
-			expression:
-				'JSON.stringify({ title: document.title, pogo: window.PogoConfig ?? null, h1: document.querySelector("h1")?.innerText ?? null })',
+			expression: `\
+JSON.stringify({
+	title: document.title,
+	pogo: window.PogoConfig ?? null,
+	h1: document.querySelector('h1')?.innerText ?? null,
+})`,
 			returnByValue: true,
 		});
 
@@ -81,7 +84,7 @@ async function pollPogoSnapshot(
 			}
 		}
 
-		await sleep(700);
+		await setTimeout(700);
 	}
 
 	return null;

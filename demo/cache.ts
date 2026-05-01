@@ -2,11 +2,11 @@ import { isRecord } from './util.ts';
 
 const CACHE_KEY = 'claude-down:last-summary';
 
-type CachedEntry = {
-	savedAt: number;
+interface CachedEntry {
 	intervalMs: number;
 	result: unknown;
-};
+	savedAt: number;
+}
 
 function readCache(): CachedEntry | null {
 	try {

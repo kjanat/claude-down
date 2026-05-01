@@ -74,17 +74,7 @@
 		"node": ">=24"
 	},
 	"devEngines": {
-		"packageManager": [
-			{
-				"name": "bun",
-				"onFail": "warn"
-			}
-		],
-		"runtime": [
-			{
-				"name": "bun",
-				"onFail": "warn"
-			}
-		]
+		"packageManager": [{ "name": "bun", "onFail": "warn" }],
+		"runtime": [{ "name": "bun", "onFail": "warn" }]
 	}
 }

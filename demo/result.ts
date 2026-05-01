@@ -2,16 +2,16 @@ import type { Component, Incident } from '#claude-down/browser';
 
 import { getString, isRecord } from './util.ts';
 
-type HeroStatus = {
+interface HeroStatus {
 	description: string;
 	indicator: string;
-};
+}
 
-type StatusSummary = {
-	status: HeroStatus;
-	incidents: Incident[];
+interface StatusSummary {
 	components: Component[];
-};
+	incidents: Incident[];
+	status: HeroStatus;
+}
 
 function getResultErrorMessage(result: unknown): string {
 	if (!isRecord(result)) {

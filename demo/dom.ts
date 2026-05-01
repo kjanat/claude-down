@@ -2,16 +2,13 @@ import idleFaviconHref from './assets/claude-down-grayscale.svg';
 import pollingFaviconHref from './assets/claude-down.svg';
 
 function getElement(id: string): HTMLElement {
-	const element = document.getElementById(id);
-
-	if (!element) {
-		throw new Error(`Missing #${id}`);
-	}
-
-	return element;
+	const element = document.querySelector(`#${id}`);
+	if (element instanceof HTMLElement) return element;
+	throw new Error(`Missing #${id}`);
 }
 
 function getFaviconElement(): HTMLLinkElement {
+	// biome-ignore lint/security/noSecrets: not a secret
 	const element = document.querySelector('link[rel~="icon"]');
 
 	if (element instanceof HTMLLinkElement) {

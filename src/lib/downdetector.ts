@@ -53,4 +53,4 @@ async function check(): Promise<Signal> {
 	}
 }
 
-export { check as checkDownDetector, check as default };
+export { check as checkDownDetector };
