@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: "latest" }
-      - run: bun build --compile --target=browser ./demo/index.html --outdir=dist --public-path='https://kjanat.github.io/claude-down/' --minify
+      - run: bun site:build --public-path='https://kjanat.github.io/claude-down/'
       - uses: actions/upload-pages-artifact@v5
         with: { path: "./dist" }
 

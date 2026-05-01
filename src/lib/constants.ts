@@ -1,3 +1,5 @@
+import type { Indicator } from '#claude-down/lib/types.ts';
+
 /** Mapping of status levels to their corresponding exit codes. */
 const EXIT_CODES = {
 	'none': 0,
@@ -5,7 +7,7 @@ const EXIT_CODES = {
 	'major': 2,
 	'critical': 2,
 	'unavailable': 21,
-} as const;
+} as const satisfies Record<Indicator, number>;
 
 /** Base URL for Anthropic's status page API. */
 const ANTHROPIC_STATUS_BASE = 'https://status.claude.com';

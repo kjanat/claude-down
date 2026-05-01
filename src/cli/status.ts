@@ -2,7 +2,7 @@ import type { Source, StatusRow } from '#claude-down/cli/model.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 import { EXIT_CODES } from '#claude-down/lib/constants.ts';
 import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
-import type { AvailableIndicator } from '#claude-down/lib/types.ts';
+import type { AvailableIndicator, ComponentStatus } from '#claude-down/lib/types.ts';
 
 function normalizeIndicator(value: string): AvailableIndicator {
 	if (value === 'none' || value === 'minor' || value === 'major' || value === 'critical') {
@@ -10,6 +10,20 @@ function normalizeIndicator(value: string): AvailableIndicator {
 	}
 
 	return 'critical';
+}
+
+function normalizeComponentStatus(value: string): ComponentStatus {
+	if (
+		value === 'operational'
+		|| value === 'degraded_performance'
+		|| value === 'partial_outage'
+		|| value === 'major_outage'
+		|| value === 'under_maintenance'
+	) {
+		return value;
+	}
+
+	return 'major_outage';
 }
 
 async function checkAnthropicSource(anthropicStatusBase: string): Promise<StatusRow> {
@@ -37,7 +51,10 @@ async function checkAnthropicSource(anthropicStatusBase: string): Promise<Status
 			? result.summary.incidents.map((incident) => ({ name: incident.name, status: incident.status }))
 			: null,
 		affectedComponents: affectedComponents.length > 0
-			? affectedComponents.map((component) => ({ name: component.name, status: component.status }))
+			? affectedComponents.map((component) => ({
+				name: component.name,
+				status: normalizeComponentStatus(component.status),
+			}))
 			: null,
 	};
 }

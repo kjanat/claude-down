@@ -1,6 +1,7 @@
 import { file } from 'bun';
 
 const anthropicStatusBaseEnvVar = 'CLAUDE_DOWN_ANTHROPIC_STATUS_BASE';
+const cacheControlHeader = 'max-age=3, public, s-maxage=10, stale-while-revalidate=20, stale-if-error=3600';
 
 type SummaryFixtureName = 'anthropic-down.json' | 'anthropic-up.json';
 
@@ -26,7 +27,7 @@ async function startSummaryFixtureServer(summaryBody: string): Promise<FixtureSe
 			if (req.method === 'GET' && url.pathname === '/api/v2/summary.json') {
 				return new Response(summaryBody, {
 					status: 200,
-					headers: { 'content-type': 'application/json' },
+					headers: { 'cache-control': cacheControlHeader, 'content-type': 'application/json' },
 				});
 			}
 
@@ -57,5 +58,5 @@ async function withSummaryFixture<T>(
 	}
 }
 
-export { anthropicStatusBaseEnvVar, withSummaryFixture };
+export { anthropicStatusBaseEnvVar, cacheControlHeader, withSummaryFixture };
 export type { FixtureServer, SummaryFixtureName };

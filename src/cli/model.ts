@@ -1,4 +1,4 @@
-import type { Indicator } from '#claude-down/lib/types.ts';
+import type { ComponentStatus, IncidentStatusValue, Indicator } from '#claude-down/lib/types.ts';
 
 const sources = ['anthropic', 'downdetector'] as const;
 
@@ -11,12 +11,12 @@ const sourceLabels = {
 
 type IncidentSummary = Readonly<{
 	name: string;
-	status: string;
+	status: IncidentStatusValue;
 }>;
 
 type AffectedComponent = Readonly<{
 	name: string;
-	status: string;
+	status: ComponentStatus;
 }>;
 
 type AnthropicStatusRow = Readonly<{
@@ -29,7 +29,7 @@ type AnthropicStatusRow = Readonly<{
 
 type DowndetectorStatusRow = Readonly<{
 	source: 'downdetector';
-	indicator: 'none' | 'major' | 'unavailable';
+	indicator: Extract<Indicator, 'none' | 'major' | 'unavailable'>;
 	summaryText: string | null;
 	reportsOutage: boolean;
 }>;

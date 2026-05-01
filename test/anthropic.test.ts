@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { checkAnthropicSource, summarizeExitCode } from '#claude-down/cli/status.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
-import { withSummaryFixture } from '#test/support/statuspage-fixture.ts';
+import { cacheControlHeader, withSummaryFixture } from '#test/support/statuspage-fixture.ts';
 
 describe('checkAnthropic', () => {
 	test('parses the down fixture summary', async () => {
@@ -36,6 +36,7 @@ describe('checkAnthropic', () => {
 			}
 
 			expect(result.summary.status.indicator).toBe('none');
+			expect(result.headers.get('cache-control')).toBe(cacheControlHeader);
 			expect(result.summary.status.description).toBe('All Systems Operational');
 			expect(result.summary.incidents).toEqual([]);
 			expect(
