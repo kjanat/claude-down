@@ -34,13 +34,18 @@ function isCdpEvalResult(value: unknown): value is CdpEvalResult {
 function isPogoSnapshot(value: unknown): value is PogoSnapshot {
 	if (typeof value !== 'object' || value === null) return false;
 	if (!('title' in value) || typeof value.title !== 'string') return false;
-	if ('h1' in value && value.h1 !== null && typeof value.h1 !== 'string') return false;
+	if ('h1' in value && value.h1 !== null && typeof value.h1 !== 'string') {
+		return false;
+	}
 	if (!('pogo' in value)) return false;
 	if (value.pogo === null) return true;
 	if (typeof value.pogo !== 'object') return false;
 
 	const pogo = value.pogo;
-	if ('outage' in pogo && pogo.outage !== undefined && typeof pogo.outage !== 'boolean') return false;
+	if (
+		'outage' in pogo && pogo.outage !== undefined
+		&& typeof pogo.outage !== 'boolean'
+	) return false;
 
 	return true;
 }

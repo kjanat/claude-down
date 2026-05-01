@@ -2,10 +2,16 @@ import type { Source, StatusRow } from '#claude-down/cli/model.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 import { EXIT_CODES } from '#claude-down/lib/constants.ts';
 import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
-import type { AvailableIndicator, ComponentStatus } from '#claude-down/lib/types.ts';
+import type {
+	AvailableIndicator,
+	ComponentStatus,
+} from '#claude-down/lib/types.ts';
 
 function normalizeIndicator(value: string): AvailableIndicator {
-	if (value === 'none' || value === 'minor' || value === 'major' || value === 'critical') {
+	if (
+		value === 'none' || value === 'minor' || value === 'major'
+		|| value === 'critical'
+	) {
 		return value;
 	}
 
@@ -26,7 +32,9 @@ function normalizeComponentStatus(value: string): ComponentStatus {
 	return 'major_outage';
 }
 
-async function checkAnthropicSource(anthropicStatusBase: string): Promise<StatusRow> {
+async function checkAnthropicSource(
+	anthropicStatusBase: string,
+): Promise<StatusRow> {
 	const result = await checkAnthropic(anthropicStatusBase);
 	if (result.kind === 'unknown') {
 		return {
@@ -48,7 +56,10 @@ async function checkAnthropicSource(anthropicStatusBase: string): Promise<Status
 		indicator,
 		summaryText: result.summary.status.description,
 		incidents: result.summary.incidents.length > 0
-			? result.summary.incidents.map((incident) => ({ name: incident.name, status: incident.status }))
+			? result.summary.incidents.map((incident) => ({
+				name: incident.name,
+				status: incident.status,
+			}))
 			: null,
 		affectedComponents: affectedComponents.length > 0
 			? affectedComponents.map((component) => ({
@@ -78,7 +89,10 @@ async function checkDowndetectorSource(): Promise<StatusRow> {
 	};
 }
 
-async function checkSource(source: Source, anthropicStatusBase: string): Promise<StatusRow> {
+async function checkSource(
+	source: Source,
+	anthropicStatusBase: string,
+): Promise<StatusRow> {
 	switch (source) {
 		case 'anthropic':
 			return checkAnthropicSource(anthropicStatusBase);
@@ -91,7 +105,9 @@ async function checkSources(
 	sources: readonly Source[],
 	anthropicStatusBase: string,
 ): Promise<readonly StatusRow[]> {
-	return Promise.all(sources.map((source) => checkSource(source, anthropicStatusBase)));
+	return Promise.all(
+		sources.map((source) => checkSource(source, anthropicStatusBase)),
+	);
 }
 
 function getExitCode(row: StatusRow): number {
@@ -99,11 +115,16 @@ function getExitCode(row: StatusRow): number {
 }
 
 function summarizeExitCode(rows: readonly StatusRow[]): number {
-	return rows.reduce<number>((max, row) => Math.max(max, getExitCode(row)), EXIT_CODES.none);
+	return rows.reduce<number>(
+		(max, row) => Math.max(max, getExitCode(row)),
+		EXIT_CODES.none,
+	);
 }
 
 function sortRows(rows: readonly StatusRow[]): StatusRow[] {
-	return [...rows].sort((left, right) => left.source.localeCompare(right.source));
+	return [...rows].sort((left, right) =>
+		left.source.localeCompare(right.source)
+	);
 }
 
 export {

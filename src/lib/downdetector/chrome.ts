@@ -80,7 +80,12 @@ async function launchBrowser(chrome: string): Promise<LaunchBrowserResult> {
 
 function cleanupBrowser(proc: ChildProcess, userDataDir: string): void {
 	proc.kill();
-	rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+	rmSync(userDataDir, {
+		recursive: true,
+		force: true,
+		maxRetries: 5,
+		retryDelay: 100,
+	});
 }
 
 export { cleanupBrowser, findChrome, launchBrowser };

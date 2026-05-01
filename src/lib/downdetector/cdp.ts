@@ -1,4 +1,7 @@
-type CdpSend = (method: string, params?: Record<string, unknown>) => Promise<unknown>;
+type CdpSend = (
+	method: string,
+	params?: Record<string, unknown>,
+) => Promise<unknown>;
 
 type TargetInfo = {
 	webSocketDebuggerUrl: string;
@@ -14,7 +17,8 @@ function isTargetInfo(value: unknown): value is TargetInfo {
 }
 
 function isCdpMessage(value: unknown): value is { id: number } {
-	return value !== null && typeof value === 'object' && 'id' in value && typeof value.id === 'number';
+	return value !== null && typeof value === 'object' && 'id' in value
+		&& typeof value.id === 'number';
 }
 
 function createCdpConnection(ws: WebSocket): CdpSend {
@@ -65,10 +69,15 @@ function createCdpConnection(ws: WebSocket): CdpSend {
 async function openCdpTarget(
 	base: string,
 	url: string,
-): Promise<{ ok: true; send: CdpSend; close: () => void } | { ok: false; error: string }> {
-	const targetResponse = await fetch(`${base}/json/new?${encodeURIComponent(url)}`, {
-		method: 'PUT',
-	});
+): Promise<
+	{ ok: true; send: CdpSend; close: () => void } | { ok: false; error: string }
+> {
+	const targetResponse = await fetch(
+		`${base}/json/new?${encodeURIComponent(url)}`,
+		{
+			method: 'PUT',
+		},
+	);
 	const targetJson: unknown = await targetResponse.json();
 	if (!isTargetInfo(targetJson)) {
 		return { ok: false, error: 'unexpected CDP target shape' };

@@ -1,4 +1,8 @@
-import type { ComponentStatus, IncidentStatusValue, Indicator } from '#claude-down/lib/types.ts';
+import type {
+	ComponentStatus,
+	IncidentStatusValue,
+	Indicator,
+} from '#claude-down/lib/types.ts';
 
 const sources = ['anthropic', 'downdetector'] as const;
 
@@ -56,4 +60,10 @@ type DowndetectorOutputRow = Readonly<{
 type StatusOutputRow = AnthropicOutputRow | DowndetectorOutputRow;
 
 export { sourceLabels, sources };
-export type { AnthropicStatusRow, DowndetectorStatusRow, Source, StatusOutputRow, StatusRow };
+export type {
+	AnthropicStatusRow,
+	DowndetectorStatusRow,
+	Source,
+	StatusOutputRow,
+	StatusRow,
+};

@@ -121,7 +121,12 @@
 					"updated_at": "2026-04-28T17:51:36.934Z",
 					"display_at": "2026-04-28T17:51:36.934Z",
 					"affected_components": [
-						{ "code": "rwppv331jlwc", "name": "claude.ai", "old_status": "major_outage", "new_status": "major_outage" },
+						{
+							"code": "rwppv331jlwc",
+							"name": "claude.ai",
+							"old_status": "major_outage",
+							"new_status": "major_outage"
+						},
 						{
 							"code": "0qbwn08sd68x",
 							"name": "Claude Console (platform.claude.com)",
@@ -166,7 +171,12 @@
 					"updated_at": "2026-04-28T17:41:55.480Z",
 					"display_at": "2026-04-28T17:41:55.480Z",
 					"affected_components": [
-						{ "code": "rwppv331jlwc", "name": "claude.ai", "old_status": "operational", "new_status": "major_outage" },
+						{
+							"code": "rwppv331jlwc",
+							"name": "claude.ai",
+							"old_status": "operational",
+							"new_status": "major_outage"
+						},
 						{
 							"code": "0qbwn08sd68x",
 							"name": "Claude Console (platform.claude.com)",

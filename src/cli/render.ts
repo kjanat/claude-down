@@ -2,7 +2,10 @@ import type { Out } from '@kjanat/dreamcli';
 
 import { sourceLabels } from '#claude-down/cli/model.ts';
 import type { StatusOutputRow, StatusRow } from '#claude-down/cli/model.ts';
-import { ANTHROPIC_STATUS_BASE, DOWNDETECTOR_URL } from '#claude-down/lib/constants.ts';
+import {
+	ANTHROPIC_STATUS_BASE,
+	DOWNDETECTOR_URL,
+} from '#claude-down/lib/constants.ts';
 import type { AvailableIndicator } from '#claude-down/lib/types.ts';
 
 const ANSI_RESET = '\x1b[0m';
@@ -39,7 +42,11 @@ function urlFor(row: StatusRow): string {
 	return row.source === 'anthropic' ? ANTHROPIC_STATUS_BASE : DOWNDETECTOR_URL;
 }
 
-function formatList(lines: string[], label: string, items: readonly string[]): void {
+function formatList(
+	lines: string[],
+	label: string,
+	items: readonly string[],
+): void {
 	if (items.length === 0) return;
 
 	lines.push(`  ${label}:`);
@@ -72,8 +79,14 @@ function formatRow(row: StatusRow, styled: boolean): string {
 	const summary = row.summaryText ?? 'All systems operational';
 	lines.push(`  ${paint(summary, color, styled)}`);
 
-	const incidents = row.incidents?.map((incident) => `${incident.name} (${incident.status})`) ?? [];
-	formatList(lines, incidents.length === 1 ? 'Active incident' : 'Active incidents', incidents);
+	const incidents =
+		row.incidents?.map((incident) => `${incident.name} (${incident.status})`)
+			?? [];
+	formatList(
+		lines,
+		incidents.length === 1 ? 'Active incident' : 'Active incidents',
+		incidents,
+	);
 	formatList(
 		lines,
 		'Affected components',
@@ -85,7 +98,11 @@ function formatRow(row: StatusRow, styled: boolean): string {
 
 function toOutputRow(row: StatusRow): StatusOutputRow {
 	if (row.source === 'downdetector') {
-		const status = row.indicator === 'unavailable' ? 'unavailable' : row.reportsOutage ? 'down' : 'up';
+		const status = row.indicator === 'unavailable'
+			? 'unavailable'
+			: row.reportsOutage
+			? 'down'
+			: 'up';
 		return {
 			source: 'downdetector',
 			status,

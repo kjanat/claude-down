@@ -1,8 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 
-import { checkAnthropicSource, summarizeExitCode } from '#claude-down/cli/status.ts';
+import {
+	checkAnthropicSource,
+	summarizeExitCode,
+} from '#claude-down/cli/status.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
-import { cacheControlHeader, withSummaryFixture } from '#test/support/statuspage-fixture.ts';
+import {
+	cacheControlHeader,
+	withSummaryFixture,
+} from '#test/support/statuspage-fixture.ts';
 
 describe('checkAnthropic', () => {
 	test('parses the down fixture summary', async () => {
@@ -16,12 +22,19 @@ describe('checkAnthropic', () => {
 
 			expect(result.summary.status.indicator).toBe('major');
 			expect(result.summary.status.description).toBe('Partial System Outage');
-			expect(result.summary.incidents[0]?.name).toBe('Claude.ai unavailable and elevated errors on the API');
+			expect(result.summary.incidents[0]?.name).toBe(
+				'Claude.ai unavailable and elevated errors on the API',
+			);
 			expect(
 				result.summary.components
 					.filter((component) => component.status !== 'operational')
 					.map((component) => component.name),
-			).toEqual(['claude.ai', 'Claude API (api.anthropic.com)', 'Claude Code', 'Claude Cowork']);
+			).toEqual([
+				'claude.ai',
+				'Claude API (api.anthropic.com)',
+				'Claude Code',
+				'Claude Cowork',
+			]);
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
 	});
@@ -59,7 +72,10 @@ describe('checkAnthropicSource', () => {
 				indicator: 'major',
 				summaryText: 'Partial System Outage',
 				incidents: [
-					{ name: 'Claude.ai unavailable and elevated errors on the API', status: 'identified' },
+					{
+						name: 'Claude.ai unavailable and elevated errors on the API',
+						status: 'identified',
+					},
 				],
 				affectedComponents: [
 					{ name: 'claude.ai', status: 'major_outage' },

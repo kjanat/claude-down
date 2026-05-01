@@ -1,7 +1,11 @@
 import { command, type Out } from '@kjanat/dreamcli';
 import { exit } from 'node:process';
 
-import { anthropicStatusBaseFlag, quietFlag, sourceSelectionFlag } from '#claude-down/cli/flags.ts';
+import {
+	anthropicStatusBaseFlag,
+	quietFlag,
+	sourceSelectionFlag,
+} from '#claude-down/cli/flags.ts';
 import { sourceLabels } from '#claude-down/cli/model.ts';
 import type { StatusRow } from '#claude-down/cli/model.ts';
 import { renderStatusRows } from '#claude-down/cli/render.ts';
@@ -13,7 +17,11 @@ import {
 	summarizeExitCode,
 } from '#claude-down/cli/status.ts';
 
-function finishStatus(rows: readonly StatusRow[], quiet: boolean, out: Out): void {
+function finishStatus(
+	rows: readonly StatusRow[],
+	quiet: boolean,
+	out: Out,
+): void {
 	if (quiet) {
 		const exitCode = summarizeExitCode(rows);
 		if (exitCode !== 0) exit(exitCode);

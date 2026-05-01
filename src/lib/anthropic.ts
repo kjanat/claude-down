@@ -6,7 +6,9 @@ const SUMMARY_PATH = '/api/v2/summary.json';
 async function getErrorReason(response: Response): Promise<string> {
 	try {
 		const body = await response.text();
-		return `Request failed with status code ${response.status}${body.length > 0 ? `: ${body}` : ''}`;
+		return `Request failed with status code ${response.status}${
+			body.length > 0 ? `: ${body}` : ''
+		}`;
 	} catch {
 		return `Request failed with status code ${response.status}: ${response.statusText}`;
 	}
@@ -21,7 +23,11 @@ async function check(baseUrl: string = ANTHROPIC_STATUS_BASE): Promise<Result> {
 	try {
 		const response = await fetch(new URL(SUMMARY_PATH, baseUrl));
 		if (!response.ok) {
-			return { headers: response.headers, kind: 'unknown', reason: await getErrorReason(response) };
+			return {
+				headers: response.headers,
+				kind: 'unknown',
+				reason: await getErrorReason(response),
+			};
 		}
 
 		const summary: Summary = await response.json();

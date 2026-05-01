@@ -1,6 +1,10 @@
 import { DOWNDETECTOR_URL } from '#claude-down/lib/constants.ts';
 import { openCdpTarget } from '#claude-down/lib/downdetector/cdp.ts';
-import { cleanupBrowser, findChrome, launchBrowser } from '#claude-down/lib/downdetector/chrome.ts';
+import {
+	cleanupBrowser,
+	findChrome,
+	launchBrowser,
+} from '#claude-down/lib/downdetector/chrome.ts';
 import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot.ts';
 import type { Signal } from '#claude-down/lib/types.ts';
 
@@ -33,7 +37,11 @@ async function check(): Promise<Signal> {
 		}
 
 		if (result.pogo.outage === true) {
-			return { ok: true, down: true, reason: result.heading ?? 'outage reported' };
+			return {
+				ok: true,
+				down: true,
+				reason: result.heading ?? 'outage reported',
+			};
 		}
 
 		return { ok: true, down: false };
