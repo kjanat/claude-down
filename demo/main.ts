@@ -17,6 +17,7 @@ const POLL_INTERVAL_MS = 10_000;
 
 let pollTimer: number | undefined;
 let pollInFlight = false;
+let pendingImmediateRepoll = false;
 
 function getElement(id: string): HTMLElement {
 	const element = document.getElementById(id);
@@ -160,7 +161,12 @@ function schedulePoll() {
 async function poll() {
 	clearPollTimer();
 
-	if (document.visibilityState !== 'visible' || pollInFlight) {
+	if (document.visibilityState !== 'visible') {
+		return;
+	}
+
+	if (pollInFlight) {
+		pendingImmediateRepoll = true;
 		return;
 	}
 
@@ -172,7 +178,14 @@ async function poll() {
 		showError(error);
 	} finally {
 		pollInFlight = false;
-		schedulePoll();
+
+		if (pendingImmediateRepoll && document.visibilityState === 'visible') {
+			pendingImmediateRepoll = false;
+			void poll();
+		} else {
+			pendingImmediateRepoll = false;
+			schedulePoll();
+		}
 	}
 }
 
