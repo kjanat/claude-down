@@ -13,8 +13,10 @@
 	--color-secondary: #94a3b8;
 	--color-accent: #f59e0b;
 	--color-error: #ef4444;
+	--icon-github: url(github.svg);
 	--icon-loading: url(loading.svg);
 	--logo: url(claude-down.svg);
+	--icon-npm: url(npm.svg);
 }
 
 body {
@@ -258,4 +260,77 @@ header {
 	margin-top: 2px;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
+}
+
+.footer {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	padding-top: 6px;
+}
+
+.footer-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border: 1px solid #2d3748;
+	border-radius: 50%;
+	color: var(--color-secondary);
+	background:
+		radial-gradient(circle at 50% 100%, rgba(148, 163, 184, 0.14), transparent 58%),
+		#1e2535;
+	transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s, transform 0.2s;
+}
+
+.footer-link::before {
+	content: "";
+	display: block;
+	width: 20px;
+	height: 20px;
+	background-color: currentColor;
+	transform-origin: center;
+	transition: transform 0.2s;
+}
+
+.footer-link-github::before {
+	mask: var(--icon-github) center / contain no-repeat;
+}
+
+.footer-link-npm::before {
+	mask: var(--icon-npm) center / contain no-repeat;
+}
+
+.footer-link:hover,
+.footer-link:focus-visible {
+	border-color: #3d4f6b;
+	box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+	transform: translateY(-2px);
+}
+
+.footer-link:hover::before,
+.footer-link:focus-visible::before {
+	transform: rotate(-6deg) scale(1.08);
+}
+
+.footer-link-github:hover,
+.footer-link-github:focus-visible {
+	color: #f1f5f9;
+	background:
+		radial-gradient(circle at 50% 100%, rgba(241, 245, 249, 0.2), transparent 58%),
+		#1e2535;
+}
+
+.footer-link-npm:hover,
+.footer-link-npm:focus-visible {
+	color: #f97316;
+	background:
+		radial-gradient(circle at 50% 100%, rgba(249, 115, 22, 0.22), transparent 58%),
+		#1e2535;
+}
+
+.footer-link:focus-visible {
+	outline: 2px solid var(--color-secondary);
+	outline-offset: 3px;
 }
