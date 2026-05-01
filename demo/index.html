@@ -10,9 +10,16 @@
 		<meta name="description" content="Live Anthropic service status dashboard using claude-down">
 		<meta name="theme-color" content="#e2e8f0">
 
+		<link
+			rel="preload"
+			href="https://status.claude.com/api/v2/summary.json"
+			as="fetch"
+			type="application/json"
+			crossorigin
+		>
 		<link rel="stylesheet" href="style.css">
 		<link rel="icon" href="claude-down.svg" type="image/svg+xml" sizes="any">
-		<script src="main.ts" type="module" defer></script>
+		<script src="main.ts" type="module"></script>
 	</head>
 
 	<body translate="no">

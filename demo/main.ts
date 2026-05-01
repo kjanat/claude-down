@@ -124,9 +124,11 @@ async function run() {
 		.join('');
 }
 
-run().catch((error: unknown) => {
+function showError(error: unknown) {
 	const elements = getElements();
 	elements.heroTitle.textContent = 'Exception';
 	elements.heroSub.textContent = getErrorMessage(error);
 	elements.hero.className = 'hero error';
-});
+}
+
+void run().catch(showError);
