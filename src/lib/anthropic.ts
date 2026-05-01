@@ -1,7 +1,6 @@
+import { StatusAPIEndpoints } from '#claude-down/lib/anthropic/endpoints.ts';
 import { ANTHROPIC_STATUS_BASE } from '#claude-down/lib/constants.ts';
 import type { Result, Summary } from '#claude-down/lib/types.ts';
-
-const SUMMARY_PATH = '/api/v2/summary.json';
 
 async function getErrorReason(response: Response): Promise<string> {
 	try {
@@ -21,7 +20,9 @@ async function getErrorReason(response: Response): Promise<string> {
  */
 async function check(baseUrl: string = ANTHROPIC_STATUS_BASE): Promise<Result> {
 	try {
-		const response = await fetch(new URL(SUMMARY_PATH, baseUrl));
+		const response = await fetch(
+			new URL(StatusAPIEndpoints.summary(), baseUrl),
+		);
 		if (!response.ok) {
 			return {
 				headers: response.headers,
