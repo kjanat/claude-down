@@ -13,6 +13,11 @@ const statusLabels: Record<string, StatusLabel> = {
 	under_maintenance: { label: 'Maintenance', color: '#6366f1' },
 };
 
+const POLL_INTERVAL_MS = 10_000;
+
+let pollTimer: number | undefined;
+let pollInFlight = false;
+
 function getElement(id: string): HTMLElement {
 	const element = document.getElementById(id);
 	if (element === null) {
@@ -131,4 +136,53 @@ function showError(error: unknown) {
 	elements.hero.className = 'hero error';
 }
 
-void run().catch(showError);
+function clearPollTimer() {
+	if (pollTimer === undefined) {
+		return;
+	}
+
+	window.clearTimeout(pollTimer);
+	pollTimer = undefined;
+}
+
+function schedulePoll() {
+	clearPollTimer();
+
+	if (document.visibilityState !== 'visible') {
+		return;
+	}
+
+	pollTimer = window.setTimeout(() => {
+		void poll();
+	}, POLL_INTERVAL_MS);
+}
+
+async function poll() {
+	clearPollTimer();
+
+	if (document.visibilityState !== 'visible' || pollInFlight) {
+		return;
+	}
+
+	pollInFlight = true;
+
+	try {
+		await run();
+	} catch (error) {
+		showError(error);
+	} finally {
+		pollInFlight = false;
+		schedulePoll();
+	}
+}
+
+document.addEventListener('visibilitychange', () => {
+	if (document.visibilityState === 'visible') {
+		void poll();
+		return;
+	}
+
+	clearPollTimer();
+});
+
+void poll();
