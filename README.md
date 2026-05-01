@@ -2,12 +2,15 @@
 
 **Is Claude down? Again?**
 
-> A tiny CLI tool to check if Claude is operational, combining official status reports with community signals.
+> A tiny CLI tool to check if Claude is operational, combining official status
+> reports with community signals.
 
 `claude-down` monitors two sources in parallel:
 
-1. **Anthropic Status Page** (`status.claude.com`): The authoritative source for incident reports and component status.
-2. **Downdetector**: Community-driven signal that often leads official reports by several minutes.
+1. **Anthropic Status Page** (`status.claude.com`): The authoritative source for
+   incident reports and component status.
+2. **Downdetector**: Community-driven signal that often leads official reports
+   by several minutes.
 
 ## Installation
 
@@ -31,7 +34,8 @@ npm install -g claude-down
 
 ### Human-readable summary
 
-The `status` command provides a status indicator, a brief description, and details from both sources.
+The `status` command provides a status indicator, a brief description, and
+details from both sources.
 
 ```bash
 claude-down status
@@ -70,7 +74,9 @@ claude-down status -s downdetector
 
 ## Browser Usage
 
-`claude-down` provides a browser-safe entry point that only includes the Anthropic Statuspage source (since Downdetector requires a local Chromium binary).
+`claude-down` provides a browser-safe entry point that only includes the
+Anthropic Statuspage source (since Downdetector requires a local Chromium
+binary).
 
 ```typescript
 import { checkAnthropic } from "claude-down/browser";

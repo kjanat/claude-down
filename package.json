@@ -2,7 +2,7 @@
 	"name": "claude-down",
 	"version": "0.4.2",
 	"description": "Is claude code down? Probably...",
-	"homepage": "https://github.com/kjanat/claude-down#readme",
+	"homepage": "https://kjanat.github.io/claude-down/",
 	"bugs": {
 		"url": "https://github.com/kjanat/claude-down/issues"
 	},
@@ -13,8 +13,10 @@
 	"license": "MIT",
 	"author": "Kaj Kowalski <info@kajkowalski.nl> (https://github.com/kjanat)",
 	"type": "module",
+	"jsdelivr": "./dist/browser/browser.js",
 	"imports": {
 		"#claude-down": "./src/index.ts",
+		"#claude-down/browser": "./src/browser.ts",
 		"#claude-down/*": "./src/*",
 		"#test/*": "./test/*"
 	},
@@ -48,7 +50,12 @@
 		"prepublishOnly": "bun run build -l warn",
 		"publishChecks": "e18e-cli analyze; attw; bunx publint --pack bun --strict",
 		"test": "bun test",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"dev": "bun demo/index.html",
+		"preview": "bun start",
+		"site:build": "bun build --compile --target=browser ./demo/index.html --outdir=dist/site --minify",
+		"prestart": "bun site:build",
+		"start": "bunx serve dist/site"
 	},
 	"dependencies": {
 		"@kjanat/dreamcli": "^2.1.0"
@@ -79,9 +86,5 @@
 				"onFail": "warn"
 			}
 		]
-	},
-	"inlinedDependencies": {
-		"@ffflorian/api-client": "2.5.1",
-		"statuspage.io": "3.5.0"
 	}
 }
