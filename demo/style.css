@@ -24,11 +24,11 @@ body {
 	background: var(--color-bg);
 	color: var(--color-text);
 	min-height: 100vh;
-	padding: 0 0 48px;
+	padding: 0 0 32px;
 }
 
 .dashboard {
-	max-width: 760px;
+	max-width: 840px;
 	margin: 0 auto;
 	padding: 0 16px;
 }
@@ -333,4 +333,82 @@ header {
 .footer-link:focus-visible {
 	outline: 2px solid var(--color-secondary);
 	outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+	body {
+		padding-bottom: 20px;
+	}
+
+	.dashboard {
+		padding: 0 14px;
+	}
+
+	header {
+		padding: 16px 0 13px;
+		margin-bottom: 18px;
+	}
+
+	.logo {
+		font-size: 16px;
+	}
+
+	#last-updated {
+		font-size: 11px;
+	}
+
+	.hero {
+		padding: 22px;
+		margin-bottom: 22px;
+	}
+
+	.hero-inner {
+		gap: 16px;
+	}
+
+	.hero-icon {
+		width: 56px;
+		height: 56px;
+	}
+
+	.hero-title {
+		font-size: 20px;
+		line-height: 1.15;
+	}
+
+	.hero-sub {
+		font-size: 13px;
+	}
+
+	.section {
+		margin-bottom: 20px;
+	}
+
+	.section h2 {
+		font-size: 12px;
+		margin-bottom: 10px;
+	}
+
+	.empty-row,
+	.loading-row {
+		padding: 13px 16px;
+	}
+
+	.components-grid {
+		gap: 8px;
+	}
+
+	.comp-card {
+		min-height: 50px;
+		padding: 10px 14px;
+	}
+
+	.footer {
+		padding-top: 2px;
+	}
+
+	.footer-link {
+		width: 38px;
+		height: 38px;
+	}
 }
