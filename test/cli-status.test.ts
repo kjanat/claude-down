@@ -1,5 +1,7 @@
-import { runCommand } from '@kjanat/dreamcli/testkit';
+import { ExitError } from '@kjanat/dreamcli/runtime';
+import { createTestAdapter, runCommand } from '@kjanat/dreamcli/testkit';
 import { describe, expect, test } from 'bun:test';
+import pkg from 'claude-down/package.json' with { type: 'json' };
 
 import { anthropicCommand, statusCommand } from '#claude-down/cli/commands.ts';
 import { claudeDown } from '#claude-down/cli/index.ts';
@@ -53,7 +55,61 @@ async function withClosedPort<T>(run: (baseUrl: string) => Promise<T>): Promise<
 	return run(baseUrl);
 }
 
+async function runRootCli(argv: readonly string[]) {
+	const stdout: string[] = [];
+	const stderr: string[] = [];
+	const adapter = createTestAdapter({
+		argv: ['node', '/usr/bin/claude-down', ...argv],
+		cwd: '/work/actup-v2',
+		stdout: (line) => {
+			stdout.push(line);
+		},
+		stderr: (line) => {
+			stderr.push(line);
+		},
+		readFile: async (path) => {
+			if (path !== '/work/actup-v2/package.json') return null;
+			return JSON.stringify({
+				name: 'actup',
+				version: '0.0.0+dev',
+				bin: { actup: './dist/cli.mjs' },
+			});
+		},
+	});
+
+	try {
+		await claudeDown.run({ adapter });
+	} catch (error: unknown) {
+		if (error instanceof ExitError) {
+			return { exitCode: error.code, stderr, stdout };
+		}
+		throw error;
+	}
+
+	throw new Error('expected CLI run to exit');
+}
+
 describe('CLI status output', () => {
+	test('root help ignores cwd package metadata', async () => {
+		const result = await runRootCli(['--help']);
+		const output = result.stdout[0] ?? '';
+
+		expect(result.exitCode).toBe(0);
+		expect(result.stderr).toEqual([]);
+		expect(output.startsWith(`claude-down v${pkg.version}\n`)).toBe(true);
+		expect(output).toContain('Usage: claude-down <command> [options]');
+		expect(output).not.toContain('actup');
+		expect(output).not.toContain('0.0.0+dev');
+	});
+
+	test('root version ignores cwd package metadata', async () => {
+		const result = await runRootCli(['--version']);
+
+		expect(result.exitCode).toBe(0);
+		expect(result.stderr).toEqual([]);
+		expect(result.stdout).toEqual([`${pkg.version}\n`]);
+	});
+
 	test('renders Anthropic down fixture as human output in TTY mode', async () => {
 		await withSummaryFixture('anthropic-down.json', async (server) => {
 			const result = await runCommand(anthropicCommand, [], {
