@@ -40,8 +40,9 @@ const statusCommand = command('status')
 	.flag('quiet', quietFlag)
 	.flag('source', sourceSelectionFlag)
 	.action(async ({ flags, out }) => {
-		const rows = await checkSources(flags.source, flags.anthropicStatusBase);
-		finishStatus(rows, flags.quiet, out);
+		const { source, anthropicStatusBase, quiet } = flags;
+		const rows = await checkSources(source, anthropicStatusBase);
+		finishStatus(rows, quiet, out);
 	});
 
 const anthropicCommand = command('anthropic')

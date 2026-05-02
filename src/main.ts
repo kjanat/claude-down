@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { claudeDown } from '#claude-down/cli/index.ts';
+import { claudeDown } from '#claude-down/cli';
 import { stdout } from 'node:process';
 
 if (import.meta.main) {

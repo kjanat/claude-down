@@ -6,7 +6,7 @@ import {
 	ANTHROPIC_STATUS_BASE,
 	DOWNDETECTOR_URL,
 } from '#claude-down/lib/constants.ts';
-import type { AvailableIndicator } from '#claude-down/lib/types.ts';
+import type { IncidentImpactValue } from '#claude-down/lib/types.ts';
 
 const ANSI_RESET = '\x1b[0m';
 const ANSI_BOLD = '\x1b[1m';
@@ -15,7 +15,7 @@ const ANSI_RED = '\x1b[31m';
 const ANSI_GREEN = '\x1b[32m';
 const ANSI_YELLOW = '\x1b[33m';
 
-const INDICATOR_COLORS: Record<AvailableIndicator, string> = {
+const INDICATOR_COLORS: Record<IncidentImpactValue, string> = {
 	none: ANSI_GREEN,
 	minor: ANSI_YELLOW,
 	major: ANSI_RED,

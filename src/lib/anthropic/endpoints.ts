@@ -1,5 +1,6 @@
 const API_V2_BASE = '/api/v2';
 
+/** Endpoints for Anthropic's status page API. */
 export const StatusAPIEndpoints = {
 	components() {
 		return `${API_V2_BASE}/components.json` as const;
@@ -26,10 +27,12 @@ export const StatusAPIEndpoints = {
 	status() {
 		return `${API_V2_BASE}/status.json` as const;
 	},
+	/** @private */
 	subscriber(subscriberId: string) {
 		const subId = encodeURIComponent(subscriberId);
 		return `${API_V2_BASE}/subscribers/${subId}.json` as const;
 	},
+	/** @private */
 	subscribers() {
 		return `${API_V2_BASE}/subscribers.json` as const;
 	},

@@ -3,19 +3,28 @@ import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 import { EXIT_CODES } from '#claude-down/lib/constants.ts';
 import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
 import type {
-	AvailableIndicator,
 	ComponentStatus,
+	IncidentImpactValue,
 } from '#claude-down/lib/types.ts';
 
-function normalizeIndicator(value: string): AvailableIndicator {
-	if (
-		value === 'none' || value === 'minor' || value === 'major'
-		|| value === 'critical'
-	) {
-		return value;
-	}
+import { IncidentImpact } from 'statuspage.io';
 
-	return 'critical';
+/** A set of all possible incident impact indicators emitted by `statuspage.io`. */
+const INCIDENT_IMPACT_INDICATORS = new Set<string>(
+	Object.values(IncidentImpact),
+);
+
+function isAvailableIndicator(value: string): value is IncidentImpactValue {
+	return INCIDENT_IMPACT_INDICATORS.has(value);
+}
+/** Normalizes a string value to a valid {@linkcode IncidentImpactValue}.
+ *
+ * @param value - The string value to normalize.
+ * @default `'critical'` if the value is unrecognized.
+ * @returns The normalized IncidentImpactValue value, or `'critical'` if the input is unrecognized.
+ */
+function normalizeIndicator(value: string): IncidentImpactValue {
+	return isAvailableIndicator(value) ? value : IncidentImpact.Critical;
 }
 
 function normalizeComponentStatus(value: string): ComponentStatus {
@@ -33,7 +42,7 @@ function normalizeComponentStatus(value: string): ComponentStatus {
 }
 
 async function checkAnthropicSource(
-	anthropicStatusBase: string,
+	anthropicStatusBase: string | URL,
 ): Promise<StatusRow> {
 	const result = await checkAnthropic(anthropicStatusBase);
 	if (result.kind === 'unknown') {
@@ -91,7 +100,7 @@ async function checkDowndetectorSource(): Promise<StatusRow> {
 
 async function checkSource(
 	source: Source,
-	anthropicStatusBase: string,
+	anthropicStatusBase: string | URL,
 ): Promise<StatusRow> {
 	switch (source) {
 		case 'anthropic':
@@ -103,7 +112,7 @@ async function checkSource(
 
 async function checkSources(
 	sources: readonly Source[],
-	anthropicStatusBase: string,
+	anthropicStatusBase: string | URL,
 ): Promise<readonly StatusRow[]> {
 	return Promise.all(
 		sources.map((source) => checkSource(source, anthropicStatusBase)),

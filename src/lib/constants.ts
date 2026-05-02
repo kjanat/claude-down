@@ -11,6 +11,7 @@ const EXIT_CODES = {
 
 /** Base URL for Anthropic's status page API. */
 const ANTHROPIC_STATUS_BASE = 'https://status.claude.com';
+
 /** URL for Claude AI's status page on Downdetector. */
 const DOWNDETECTOR_URL = 'https://downdetector.com/status/claude-ai/';
 

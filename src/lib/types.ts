@@ -1,40 +1,76 @@
-import type { IncidentImpact, IncidentStatus, Summary } from 'statuspage.io';
+import type {
+	Component,
+	IncidentImpact,
+	IncidentStatus,
+	Summary,
+} from 'statuspage.io';
 
-/** Indicator represents the specific status code or condition that can be used to determine the state of a service.
- *
- * `'unavailable'` is a synthetic state injected when a source can't be reached;\
- * statuspage.io itself only emits the {@link AvailableIndicator} subset.
- */
-type Indicator = 'none' | 'minor' | 'major' | 'critical' | 'unavailable';
-type AvailableIndicator = Exclude<Indicator, 'unavailable'>;
-
-/** String values of statuspage.io's `IncidentImpact` enum, derived so it stays in sync if upstream adds members. */
+/** String values of `statuspage.io`'s {@linkcode IncidentImpact} enum. */
 type IncidentImpactValue = `${IncidentImpact}`;
 
-/** String values of statuspage.io's `IncidentStatus` enum, derived so it stays in sync if upstream adds members. */
+/** String values of `statuspage.io`'s {@linkcode IncidentStatus} enum. */
 type IncidentStatusValue = `${IncidentStatus}`;
 
-/** The closed set of component statuses statuspage.io emits. Hand-rolled because upstream types `Component.status` as `string`. */
+/** Status for the state of a service.
+ * - `'unavailable'` when a source can't be reached. */
+type Indicator = IncidentImpactValue | 'unavailable';
+
+/** The closed set of component statuses `statuspage.io` emits.
+ *
+ * Hand-rolled because upstream types {@linkcode Component["status"]} as `string`. */
 type ComponentStatus =
 	| 'operational'
 	| 'degraded_performance'
 	| 'partial_outage'
 	| 'major_outage'
-	| 'under_maintenance';
+	| 'under_maintenance' // unsure?
+	| Component['status'];
 
-/** A signal represents the outcome of a status check, indicating whether the service is down and providing relevant information. */
+/** A signal represents the outcome of a status check. */
 type Signal =
-	| { ok: true; down: true; reason: string }
-	| { ok: true; down: false }
-	| { ok: false; error: string };
+	| {
+		/** The check was successful. */
+		ok: true;
+		/** The service is down. */
+		down: true;
+		/** The reason for the downtime. */
+		reason: string;
+	}
+	| {
+		/** The check was successful. */
+		ok: true;
+		/** The service is up. */
+		down: false;
+	}
+	| {
+		/** The check failed. */
+		ok: false;
+		/** The reason for the failure. */
+		error: string;
+	};
 
-/** The result of a status check, which can either be a successful summary or an unknown state with a reason. */
+/** The result of a status check. */
 type Result =
-	| { headers: Headers; kind: 'ok'; summary: Summary }
-	| { headers?: Headers; kind: 'unknown'; reason: string };
+	| {
+		/** Headers from the response, included when available for debugging purposes. */
+		headers: Headers;
+		/** A discriminant property that indicates the type of result.
+		 * - `'ok'` for a successful summary. */
+		kind: 'ok';
+		/** The summary of the status page, included when the result is 'ok'. @see {@linkcode Summary} */
+		summary: Summary;
+	}
+	| {
+		/** Headers from the response, included when available for debugging purposes. */
+		headers?: Headers;
+		/** A discriminant property that indicates the type of result.
+		 * - `'unknown'` for an unknown state. */
+		kind: 'unknown';
+		/** The reason for the unknown state. */
+		reason: string;
+	};
 
 export type {
-	AvailableIndicator,
 	ComponentStatus,
 	IncidentImpactValue,
 	IncidentStatusValue,
