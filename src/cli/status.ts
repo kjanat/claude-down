@@ -1,3 +1,4 @@
+import { type Model, nameMatchesModels } from '#claude-down/cli/model.ts';
 import type { Source, StatusRow } from '#claude-down/cli/model.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 import { EXIT_CODES } from '#claude-down/lib/constants.ts';
@@ -42,8 +43,8 @@ async function checkAnthropicSource(anthropicStatusBase: string): Promise<Status
 	};
 }
 
-async function checkDowndetectorSource(): Promise<StatusRow> {
-	const result = await checkDownDetector();
+async function checkDowndetectorSource(chromePath?: string): Promise<StatusRow> {
+	const result = await checkDownDetector(chromePath);
 	if (!result.ok) {
 		return {
 			source: 'downdetector',
@@ -61,24 +62,63 @@ async function checkDowndetectorSource(): Promise<StatusRow> {
 	};
 }
 
-async function checkSource(source: Source, anthropicStatusBase: string): Promise<StatusRow> {
+async function checkSource(
+	source: Source,
+	anthropicStatusBase: string,
+	chromePath?: string,
+): Promise<StatusRow> {
 	switch (source) {
 		case 'anthropic':
 			return checkAnthropicSource(anthropicStatusBase);
 		case 'downdetector':
-			return checkDowndetectorSource();
+			return checkDowndetectorSource(chromePath);
 	}
 }
 
 async function checkSources(
 	sources: readonly Source[],
 	anthropicStatusBase: string,
+	chromePath?: string,
 ): Promise<readonly StatusRow[]> {
-	return Promise.all(sources.map((source) => checkSource(source, anthropicStatusBase)));
+	return Promise.all(sources.map((source) => checkSource(source, anthropicStatusBase, chromePath)));
+}
+
+/**
+ * Narrows an Anthropic row to incidents/components naming the selected models
+ * and re-derives its result from those matches (operational when none match).
+ * Other rows, unavailable rows, and the empty selection pass through unchanged.
+ */
+function filterAnthropicByModels(row: StatusRow, selected: ReadonlySet<Model>): StatusRow {
+	if (row.source !== 'anthropic' || selected.size === 0 || row.indicator === 'unavailable') {
+		return row;
+	}
+
+	const incidents = row.incidents?.filter((incident) => nameMatchesModels(incident.name, selected)) ?? [];
+	const affectedComponents = row.affectedComponents?.filter((component) => nameMatchesModels(component.name, selected))
+		?? [];
+
+	const label = [...selected].join(', ');
+	const matchCount = incidents.length + affectedComponents.length;
+
+	return {
+		source: 'anthropic',
+		indicator: matchCount > 0 ? 'major' : 'none',
+		summaryText: matchCount > 0
+			? `${matchCount} report(s) affecting ${label}`
+			: `No incidents reported for ${label}`,
+		incidents: incidents.length > 0 ? incidents : null,
+		affectedComponents: affectedComponents.length > 0 ? affectedComponents : null,
+	};
 }
 
 function getExitCode(row: StatusRow): number {
-	return EXIT_CODES[row.indicator];
+	const code = EXIT_CODES[row.indicator];
+	// An active incident is a failure even when the page indicator reads operational.
+	if (row.source === 'anthropic' && row.incidents && row.incidents.length > 0) {
+		return Math.max(code, EXIT_CODES.minor);
+	}
+
+	return code;
 }
 
 function summarizeExitCode(rows: readonly StatusRow[]): number {
@@ -94,6 +134,7 @@ export {
 	checkDowndetectorSource,
 	checkSource,
 	checkSources,
+	filterAnthropicByModels,
 	getExitCode,
 	sortRows,
 	summarizeExitCode,

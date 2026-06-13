@@ -1,0 +1,143 @@
+import { describe, expect, test } from 'bun:test';
+import { execPath } from 'node:process';
+
+import { selectedModels } from '#claude-down/cli/flags.ts';
+import type { Model, StatusRow } from '#claude-down/cli/model.ts';
+import { filterAnthropicByModels, getExitCode } from '#claude-down/cli/status.ts';
+import { CHROME_PATH_ENV } from '#claude-down/lib/constants.ts';
+import { findChrome } from '#claude-down/lib/downdetector/chrome.ts';
+
+function anthropicRow(overrides: Partial<Extract<StatusRow, { source: 'anthropic' }>> = {}): StatusRow {
+	return {
+		source: 'anthropic',
+		indicator: 'major',
+		summaryText: 'Partial System Outage',
+		incidents: [
+			{ name: 'Claude Opus 4.8 degraded', status: 'investigating' },
+			{ name: 'Sonnet latency', status: 'monitoring' },
+		],
+		affectedComponents: [{ name: 'Claude Haiku API', status: 'degraded_performance' }],
+		...overrides,
+	};
+}
+
+const modelFlags = (selected: readonly Model[], booleans: Partial<Record<Model, boolean>> = {}) => ({
+	model: selected,
+	opus: false,
+	haiku: false,
+	sonnet: false,
+	mythos: false,
+	fable: false,
+	...booleans,
+});
+
+describe('selectedModels', () => {
+	test('unions --model array with convenience flags and dedupes', () => {
+		expect([...selectedModels(modelFlags(['opus'], { sonnet: true, opus: true }))].sort()).toEqual([
+			'opus',
+			'sonnet',
+		]);
+	});
+
+	test('empty when nothing selected', () => {
+		expect(selectedModels(modelFlags([])).size).toBe(0);
+	});
+});
+
+describe('filterAnthropicByModels', () => {
+	test('keeps only matching incidents/components and drives a major result', () => {
+		const filtered = filterAnthropicByModels(anthropicRow(), new Set<Model>(['opus']));
+		expect(filtered).toMatchObject({
+			source: 'anthropic',
+			indicator: 'major',
+			incidents: [{ name: 'Claude Opus 4.8 degraded', status: 'investigating' }],
+			affectedComponents: null,
+		});
+		expect(filtered.summaryText).toContain('opus');
+	});
+
+	test('matches model names appearing only in components', () => {
+		const filtered = filterAnthropicByModels(anthropicRow(), new Set<Model>(['haiku']));
+		expect(filtered).toMatchObject({
+			indicator: 'major',
+			incidents: null,
+			affectedComponents: [{ name: 'Claude Haiku API', status: 'degraded_performance' }],
+		});
+	});
+
+	test('reports operational when no incident mentions the model', () => {
+		const filtered = filterAnthropicByModels(anthropicRow(), new Set<Model>(['fable']));
+		expect(filtered).toMatchObject({
+			indicator: 'none',
+			incidents: null,
+			affectedComponents: null,
+			summaryText: 'No incidents reported for fable',
+		});
+	});
+
+	test('passes through the empty selection unchanged', () => {
+		const row = anthropicRow();
+		expect(filterAnthropicByModels(row, new Set<Model>())).toBe(row);
+	});
+
+	test('leaves unavailable rows untouched', () => {
+		const row = anthropicRow({ indicator: 'unavailable', incidents: null, affectedComponents: null });
+		expect(filterAnthropicByModels(row, new Set<Model>(['opus']))).toBe(row);
+	});
+
+	test('leaves downdetector rows untouched', () => {
+		const row: StatusRow = {
+			source: 'downdetector',
+			indicator: 'major',
+			summaryText: 'outage reported',
+			reportsOutage: true,
+		};
+		expect(filterAnthropicByModels(row, new Set<Model>(['opus']))).toBe(row);
+	});
+});
+
+describe('getExitCode', () => {
+	test('fails when an active incident is present under an operational indicator', () => {
+		expect(getExitCode(anthropicRow({ indicator: 'none' }))).toBe(1);
+	});
+
+	test('is zero when operational with no incidents', () => {
+		expect(getExitCode(anthropicRow({ indicator: 'none', incidents: null }))).toBe(0);
+	});
+
+	test('reflects the indicator when it is more severe than an incident', () => {
+		expect(getExitCode(anthropicRow({ indicator: 'major' }))).toBe(2);
+	});
+
+	test('reports unavailable downdetector with its dedicated code', () => {
+		expect(
+			getExitCode({
+				source: 'downdetector',
+				indicator: 'unavailable',
+				summaryText: 'boom',
+				reportsOutage: false,
+			}),
+		).toBe(21);
+	});
+});
+
+describe('findChrome override', () => {
+	test('uses an explicit path that exists', () => {
+		expect(findChrome(execPath)).toBe(execPath);
+	});
+
+	test('returns null for an explicit path that does not exist', () => {
+		expect(findChrome('/no/such/chrome-binary')).toBeNull();
+	});
+
+	test('honors the CLAUDE_DOWN_CHROME environment variable', () => {
+		const previous = process.env[CHROME_PATH_ENV];
+		process.env[CHROME_PATH_ENV] = execPath;
+		try {
+			expect(findChrome()).toBe(execPath);
+		} finally {
+			if (previous === undefined) delete process.env[CHROME_PATH_ENV];
+			else process.env[CHROME_PATH_ENV] = previous;
+		}
+	});
+});

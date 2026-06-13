@@ -9,6 +9,21 @@ const sourceLabels = {
 	downdetector: 'Downdetector',
 } as const satisfies Record<Source, string>;
 
+/** Model families that incident/component names can be filtered against. */
+const models = ['opus', 'haiku', 'sonnet', 'mythos', 'fable'] as const;
+
+type Model = (typeof models)[number];
+
+/** Case-insensitive check for whether a name mentions any of the selected models. */
+function nameMatchesModels(name: string, selected: ReadonlySet<Model>): boolean {
+	const lower = name.toLowerCase();
+	for (const model of selected) {
+		if (lower.includes(model)) return true;
+	}
+
+	return false;
+}
+
 type IncidentSummary = Readonly<{
 	name: string;
 	status: string;
@@ -55,5 +70,5 @@ type DowndetectorOutputRow = Readonly<{
 
 type StatusOutputRow = AnthropicOutputRow | DowndetectorOutputRow;
 
-export { sourceLabels, sources };
-export type { AnthropicStatusRow, DowndetectorStatusRow, Source, StatusOutputRow, StatusRow };
+export { models, nameMatchesModels, sourceLabels, sources };
+export type { AnthropicStatusRow, DowndetectorStatusRow, Model, Source, StatusOutputRow, StatusRow };

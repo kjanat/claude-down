@@ -1,14 +1,23 @@
 import { command, type Out } from '@kjanat/dreamcli';
 import { exit } from 'node:process';
 
-import { anthropicStatusBaseFlag, quietFlag, sourceSelectionFlag } from '#claude-down/cli/flags.ts';
-import { sourceLabels } from '#claude-down/cli/model.ts';
+import {
+	anthropicStatusBaseFlag,
+	chromeFlag,
+	modelConvenienceFlags,
+	modelFlag,
+	quietFlag,
+	selectedModels,
+	sourceSelectionFlag,
+} from '#claude-down/cli/flags.ts';
+import { type Model, sourceLabels } from '#claude-down/cli/model.ts';
 import type { StatusRow } from '#claude-down/cli/model.ts';
 import { renderStatusRows } from '#claude-down/cli/render.ts';
 import {
 	checkAnthropicSource,
 	checkDowndetectorSource,
 	checkSources,
+	filterAnthropicByModels,
 	sortRows,
 	summarizeExitCode,
 } from '#claude-down/cli/status.ts';
@@ -23,35 +32,56 @@ function finishStatus(rows: readonly StatusRow[], quiet: boolean, out: Out): voi
 	renderStatusRows(sortRows(rows), out);
 }
 
+function applyModelFilter(rows: readonly StatusRow[], selected: ReadonlySet<Model>): readonly StatusRow[] {
+	if (selected.size === 0) return rows;
+	return rows.map((row) => filterAnthropicByModels(row, selected));
+}
+
 const statusCommand = command('status')
 	.description('Check Claude status across Anthropic and Downdetector')
 	.example('status', 'Check all sources')
 	.example('status --source anthropic', 'Check only Anthropic')
+	.example('status --opus', 'Only report incidents mentioning Opus')
 	.example('status --json', 'Emit machine-readable source rows')
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
+	.flag('chrome', chromeFlag)
 	.flag('quiet', quietFlag)
 	.flag('source', sourceSelectionFlag)
+	.flag('model', modelFlag)
+	.flag('opus', modelConvenienceFlags.opus)
+	.flag('haiku', modelConvenienceFlags.haiku)
+	.flag('sonnet', modelConvenienceFlags.sonnet)
+	.flag('mythos', modelConvenienceFlags.mythos)
+	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
-		const rows = await checkSources(flags.source, flags.anthropicStatusBase);
-		finishStatus(rows, flags.quiet, out);
+		const rows = await checkSources(flags.source, flags.anthropicStatusBase, flags.chrome);
+		finishStatus(applyModelFilter(rows, selectedModels(flags)), flags.quiet, out);
 	});
 
 const anthropicCommand = command('anthropic')
 	.description(`Check only ${sourceLabels.anthropic}`)
 	.example('anthropic', `Check only ${sourceLabels.anthropic}`)
+	.example('anthropic --model opus', 'Only report incidents mentioning Opus')
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('quiet', quietFlag)
+	.flag('model', modelFlag)
+	.flag('opus', modelConvenienceFlags.opus)
+	.flag('haiku', modelConvenienceFlags.haiku)
+	.flag('sonnet', modelConvenienceFlags.sonnet)
+	.flag('mythos', modelConvenienceFlags.mythos)
+	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
 		const row = await checkAnthropicSource(flags.anthropicStatusBase);
-		finishStatus([row], flags.quiet, out);
+		finishStatus(applyModelFilter([row], selectedModels(flags)), flags.quiet, out);
 	});
 
 const downdetectorCommand = command('downdetector')
 	.description(`Check only ${sourceLabels.downdetector}`)
 	.example('downdetector', `Check only ${sourceLabels.downdetector}`)
+	.flag('chrome', chromeFlag)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const row = await checkDowndetectorSource();
+		const row = await checkDowndetectorSource(flags.chrome);
 		finishStatus([row], flags.quiet, out);
 	});
 

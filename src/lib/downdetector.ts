@@ -4,10 +4,13 @@ import { cleanupBrowser, findChrome, launchBrowser } from '#claude-down/lib/down
 import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot.ts';
 import type { Signal } from '#claude-down/lib/types.ts';
 
-async function check(): Promise<Signal> {
-	const chrome = findChrome();
+async function check(chromePath?: string): Promise<Signal> {
+	const chrome = findChrome(chromePath);
 	if (chrome === null) {
-		return { ok: false, error: 'no chromium/chrome binary found' };
+		return {
+			ok: false,
+			error: 'no Chrome/Chromium found; set CLAUDE_DOWN_CHROME or pass --chrome <path>',
+		};
 	}
 
 	const launched = await launchBrowser(chrome);
