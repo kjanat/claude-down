@@ -1,12 +1,12 @@
-import { DOWNDETECTOR_URL } from '#claude-down/lib/constants.ts';
-import { openCdpTarget } from '#claude-down/lib/downdetector/cdp.ts';
+import { DOWNDETECTOR_URL } from '#claude-down/lib/constants';
+import { openCdpTarget } from '#claude-down/lib/downdetector/cdp';
 import {
 	cleanupBrowser,
 	findChrome,
 	launchBrowser,
-} from '#claude-down/lib/downdetector/chrome.ts';
-import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot.ts';
-import type { Signal } from '#claude-down/lib/types.ts';
+} from '#claude-down/lib/downdetector/chrome';
+import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot';
+import type { Signal } from '#claude-down/lib/types';
 
 /** Checks the status of Claude AI on Downdetector.
  *

@@ -6,15 +6,15 @@ import {
 	parseSourceList,
 	selectedModels,
 	selectedSources,
-} from '#claude-down/cli/flags.ts';
-import type { Model, Source, StatusRow } from '#claude-down/cli/model.ts';
+} from '#claude-down/cli/flags';
+import type { Model, Source, StatusRow } from '#claude-down/cli/model';
 import {
 	filterAnthropicByModels,
 	getExitCode,
 	summarizeExitCode,
-} from '#claude-down/cli/status.ts';
-import { CHROME_PATH_ENV } from '#claude-down/lib/constants.ts';
-import { findChrome } from '#claude-down/lib/downdetector/chrome.ts';
+} from '#claude-down/cli/status';
+import { CHROME_PATH_ENV } from '#claude-down/lib/constants';
+import { findChrome } from '#claude-down/lib/downdetector/chrome';
 
 function anthropicRow(
 	overrides: Partial<Extract<StatusRow, { source: 'anthropic' }>> = {},

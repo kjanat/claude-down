@@ -1,12 +1,12 @@
 import type { Out } from '@kjanat/dreamcli';
 
-import { sourceLabels } from '#claude-down/cli/model.ts';
-import type { StatusOutputRow, StatusRow } from '#claude-down/cli/model.ts';
+import { sourceLabels } from '#claude-down/cli/model';
+import type { StatusOutputRow, StatusRow } from '#claude-down/cli/model';
 import {
 	ANTHROPIC_STATUS_BASE,
 	DOWNDETECTOR_URL,
-} from '#claude-down/lib/constants.ts';
-import type { IncidentImpactValue } from '#claude-down/lib/types.ts';
+} from '#claude-down/lib/constants';
+import type { IncidentImpactValue } from '#claude-down/lib/types';
 
 const ANSI_RESET = '\x1b[0m';
 const ANSI_BOLD = '\x1b[1m';

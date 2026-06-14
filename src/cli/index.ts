@@ -5,7 +5,7 @@ import {
 	anthropicCommand,
 	downdetectorCommand,
 	statusCommand,
-} from '#claude-down/cli/commands.ts';
+} from '#claude-down/cli/commands';
 
 const repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '');
 

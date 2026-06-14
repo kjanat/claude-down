@@ -11,7 +11,7 @@ import {
 	MACOS_CHROME_PATHS,
 	WINDOWS_CHROME_ROOT_ENV_VARS,
 	WINDOWS_CHROME_SUFFIX_SEGMENTS,
-} from '#claude-down/lib/constants.ts';
+} from '#claude-down/lib/constants';
 
 /** Represents a launched headless browser instance. */
 type LaunchedBrowser = {

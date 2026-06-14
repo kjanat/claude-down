@@ -1,5 +1,5 @@
-import { anthropicCommand, statusCommand } from '#claude-down/cli/commands.ts';
-import { claudeDown } from '#claude-down/cli/index.ts';
+import { anthropicCommand, statusCommand } from '#claude-down/cli/commands';
+import { claudeDown } from '#claude-down/cli/index';
 import {
 	anthropicStatusBaseEnvVar,
 	withSummaryFixture,

@@ -1,4 +1,4 @@
-import type { CdpSend } from '#claude-down/lib/downdetector/cdp.ts';
+import type { CdpSend } from '#claude-down/lib/downdetector/cdp';
 import { setTimeout } from 'node:timers/promises';
 
 /** Represents the structure of the snapshot taken from the page. */

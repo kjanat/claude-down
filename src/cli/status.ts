@@ -1,12 +1,12 @@
-import { type Model, nameMatchesModels } from '#claude-down/cli/model.ts';
-import type { Source, StatusRow } from '#claude-down/cli/model.ts';
-import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
-import { EXIT_CODES } from '#claude-down/lib/constants.ts';
-import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
+import { type Model, nameMatchesModels } from '#claude-down/cli/model';
+import type { Source, StatusRow } from '#claude-down/cli/model';
+import { checkAnthropic } from '#claude-down/lib/anthropic';
+import { EXIT_CODES } from '#claude-down/lib/constants';
+import { checkDownDetector } from '#claude-down/lib/downdetector';
 import type {
 	ComponentStatus,
 	IncidentImpactValue,
-} from '#claude-down/lib/types.ts';
+} from '#claude-down/lib/types';
 
 import { IncidentImpact } from 'statuspage.io';
 

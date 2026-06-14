@@ -1,6 +1,6 @@
-import { StatusAPIEndpoints } from '#claude-down/lib/anthropic/endpoints.ts';
-import { ANTHROPIC_STATUS_BASE } from '#claude-down/lib/constants.ts';
-import type { Result, Summary } from '#claude-down/lib/types.ts';
+import { StatusAPIEndpoints } from '#claude-down/lib/anthropic/endpoints';
+import { ANTHROPIC_STATUS_BASE } from '#claude-down/lib/constants';
+import type { Result, Summary } from '#claude-down/lib/types';
 
 async function getErrorReason(response: Response): Promise<string> {
 	try {

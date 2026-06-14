@@ -5,11 +5,11 @@ import {
 	models,
 	type Source,
 	sources,
-} from '#claude-down/cli/model.ts';
+} from '#claude-down/cli/model';
 import {
 	ANTHROPIC_STATUS_BASE,
 	CHROME_PATH_ENV,
-} from '#claude-down/lib/constants.ts';
+} from '#claude-down/lib/constants';
 
 /** Builds a flag parser that splits one comma-separated token into validated
  * enum members, so `--flag a,b` works alongside repeated `--flag a --flag b`.

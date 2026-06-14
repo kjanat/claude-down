@@ -1,4 +1,4 @@
-import type { Indicator } from '#claude-down/lib/types.ts';
+import type { Indicator } from '#claude-down/lib/types';
 
 /** Mapping of status levels to their corresponding exit codes. */
 const EXIT_CODES = {

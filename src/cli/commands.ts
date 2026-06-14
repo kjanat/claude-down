@@ -10,10 +10,10 @@ import {
 	selectedModels,
 	selectedSources,
 	sourceSelectionFlag,
-} from '#claude-down/cli/flags.ts';
-import { type Model, sourceLabels } from '#claude-down/cli/model.ts';
-import type { StatusRow } from '#claude-down/cli/model.ts';
-import { renderStatusRows } from '#claude-down/cli/render.ts';
+} from '#claude-down/cli/flags';
+import { type Model, sourceLabels } from '#claude-down/cli/model';
+import type { StatusRow } from '#claude-down/cli/model';
+import { renderStatusRows } from '#claude-down/cli/render';
 import {
 	checkAnthropicSource,
 	checkDowndetectorSource,
@@ -21,7 +21,7 @@ import {
 	filterAnthropicByModels,
 	sortRows,
 	summarizeExitCode,
-} from '#claude-down/cli/status.ts';
+} from '#claude-down/cli/status';
 
 function finishStatus(
 	rows: readonly StatusRow[],

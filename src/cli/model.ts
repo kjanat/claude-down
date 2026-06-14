@@ -2,7 +2,7 @@ import type {
 	ComponentStatus,
 	IncidentStatusValue,
 	Indicator,
-} from '#claude-down/lib/types.ts';
+} from '#claude-down/lib/types';
 
 const sources = ['anthropic', 'downdetector'] as const;
 

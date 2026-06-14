@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test';
 import {
 	checkAnthropicSource,
 	summarizeExitCode,
-} from '#claude-down/cli/status.ts';
-import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
+} from '#claude-down/cli/status';
+import { checkAnthropic } from '#claude-down/lib/anthropic';
 import {
 	cacheControlHeader,
 	withSummaryFixture,

@@ -18,7 +18,7 @@
 		"#claude-down": "./src/index.ts",
 		"#claude-down/cli": "./src/cli/index.ts",
 		"#claude-down/browser": "./src/browser.ts",
-		"#claude-down/*": "./src/*",
+		"#claude-down/*": "./src/*.ts",
 		"#test/*": "./test/*"
 	},
 	"exports": {
