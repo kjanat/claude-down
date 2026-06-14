@@ -13,7 +13,11 @@ import {
 } from '#claude-down/cli/flags';
 import { type Model, type Source, sourceLabels } from '#claude-down/cli/model';
 import type { StatusRow } from '#claude-down/cli/model';
-import { renderStatusRow, renderStatusRows } from '#claude-down/cli/render';
+import {
+	renderPageFooter,
+	renderStatusRow,
+	renderStatusRows,
+} from '#claude-down/cli/render';
 import {
 	checkAnthropicSource,
 	checkDowndetectorSource,
@@ -109,6 +113,7 @@ async function streamStatus(
 		throw error;
 	}
 
+	renderPageFooter(out);
 	return collected;
 }
 
