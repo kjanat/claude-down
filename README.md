@@ -30,6 +30,18 @@ bun install -g claude-down
 npm install -g claude-down
 ```
 
+<details>
+<summary>Preview (continuous) releases</summary>
+
+Every commit and PR is published to [pkg.pr.new]; the bot comments the exact URL
+on each PR. Run a preview build with any runner:
+
+```bash
+bunx https://pkg.pr.new/kjanat/claude-down@<sha> status   # or npx / pnpx
+```
+
+</details>
+
 ## Usage
 
 ### Human-readable summary
@@ -132,3 +144,4 @@ bun test
 
 [LICENSE]: https://github.com/kjanat/claude-down/blob/master/LICENSE
 [dreamcli]: https://github.com/kjanat/dreamcli
+[pkg.pr.new]: https://pkg.pr.new
