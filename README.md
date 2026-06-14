@@ -61,9 +61,11 @@ Get structured data for scripts or monitoring tools.
 claude-down status --json
 ```
 
-### Silent mode
+### Exit code only
 
-Use for CI/CD or shell scripts where you only care about the exit code.
+The exit code always reflects the worst status found (see [Exit Codes](#exit-codes)),
+whether or not output is rendered. Use `-q`/`--quiet` in CI/CD or shell scripts
+to suppress the report and rely on the exit code alone.
 
 ```bash
 claude-down status -q
@@ -71,7 +73,8 @@ claude-down status -q
 
 ### Specific source
 
-You can check a specific source using subcommands or the `--source` flag.
+Check a specific source using subcommands or the `--source` flag. `--source`
+accepts comma-separated values and/or repeated flags.
 
 ```bash
 # Using subcommands
@@ -80,9 +83,30 @@ claude-down downdetector
 
 # Using flags
 claude-down status --source anthropic
-# or
 claude-down status -s downdetector
+
+# Multiple sources
+claude-down status --source anthropic,downdetector
+claude-down status -s anthropic -s downdetector
 ```
+
+### Filter by model
+
+Narrow incidents and components to those naming specific model families. The
+summary and exit code then reflect only the selected models, so you can alert on
+just the ones you depend on. Like `--source`, `--model` accepts comma-separated
+values and/or repeated flags; each model also has a convenience flag.
+
+```bash
+# Convenience flags
+claude-down status --opus --sonnet
+
+# --model with comma-separated and/or repeated values
+claude-down status --model opus,sonnet
+claude-down status -m opus -m sonnet
+```
+
+Available models: `opus`, `haiku`, `sonnet`, `mythos`, `fable`.
 
 ## Browser Usage
 
@@ -107,14 +131,20 @@ if (result.kind === "ok") {
 
 ## Exit Codes
 
-The CLI returns specific exit codes based on the severity of the outage:
+The CLI returns specific exit codes based on the severity of the outage. The
+code is set on every run (not only with `--quiet`) and reflects the most severe
+status across the checked sources.
 
 |   Code | Status      | Description                                                   |
 | -----: | :---------- | :------------------------------------------------------------ |
 |  **0** | Operational | Everything is working normally.                               |
-|  **1** | Degraded    | Minor issues reported by Anthropic.                           |
+|  **1** | Degraded    | Minor issue, or an active Anthropic incident.                 |
 |  **2** | Outage      | Major/critical outage or Downdetector reports Claude is down. |
-| **21** | Unknown     | Both status sources are unreachable.                          |
+| **21** | Unknown     | Every checked source was unreachable.                         |
+
+An unreachable source is treated as _unknown_, not _down_: code `21` is only
+returned when **all** selected sources are unreachable, so a flaky Downdetector
+scrape never masks an otherwise-operational result.
 
 ## Development
 

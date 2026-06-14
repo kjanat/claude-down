@@ -189,7 +189,15 @@ function getExitCode(row: StatusRow): number {
 }
 
 function summarizeExitCode(rows: readonly StatusRow[]): number {
-	return rows.reduce<number>(
+	const reachable = rows.filter((row) => row.indicator !== 'unavailable');
+	// A source we couldn't reach is "unknown", not "down": its code only counts
+	// when every source was unreachable, so a flaky Downdetector scrape doesn't
+	// mask an otherwise-operational result.
+	if (reachable.length === 0) {
+		return rows.length === 0 ? EXIT_CODES.none : EXIT_CODES.unavailable;
+	}
+
+	return reachable.reduce<number>(
 		(max, row) => Math.max(max, getExitCode(row)),
 		EXIT_CODES.none,
 	);

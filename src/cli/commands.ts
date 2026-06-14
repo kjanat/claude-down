@@ -8,6 +8,7 @@ import {
 	modelFlag,
 	quietFlag,
 	selectedModels,
+	selectedSources,
 	sourceSelectionFlag,
 } from '#claude-down/cli/flags.ts';
 import { type Model, sourceLabels } from '#claude-down/cli/model.ts';
@@ -64,7 +65,11 @@ const statusCommand = command('status')
 	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
 		const { source, anthropicStatusBase, chrome, quiet } = flags;
-		const rows = await checkSources(source, anthropicStatusBase, chrome);
+		const rows = await checkSources(
+			selectedSources(source),
+			anthropicStatusBase,
+			chrome,
+		);
 		finishStatus(applyModelFilter(rows, selectedModels(flags)), quiet, out);
 	});
 

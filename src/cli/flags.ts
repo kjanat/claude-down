@@ -1,10 +1,59 @@
 import { flag, ParseError } from '@kjanat/dreamcli';
 
-import { type Model, models, sources } from '#claude-down/cli/model.ts';
+import {
+	type Model,
+	models,
+	type Source,
+	sources,
+} from '#claude-down/cli/model.ts';
 import {
 	ANTHROPIC_STATUS_BASE,
 	CHROME_PATH_ENV,
 } from '#claude-down/lib/constants.ts';
+
+/** Builds a flag parser that splits one comma-separated token into validated
+ * enum members, so `--flag a,b` works alongside repeated `--flag a --flag b`.
+ * Thrown ParseErrors are surfaced verbatim by dreamcli's flag parser, matching
+ * its built-in enum error format. */
+function csvEnumParser<T extends string>(
+	allowed: readonly T[],
+	flagName: string,
+): (raw: unknown) => readonly T[] {
+	return (raw: unknown): readonly T[] => {
+		const result: T[] = [];
+		for (const token of String(raw).split(',')) {
+			const name = token.trim();
+			if (name.length === 0) continue;
+			// `find` yields the typed member (or undefined) without a cast.
+			const match = allowed.find((value) => value === name);
+			if (match === undefined) {
+				throw new ParseError(
+					`Invalid value '${name}' for flag --${flagName}. Allowed: ${
+						allowed.join(', ')
+					}`,
+					{
+						code: 'INVALID_VALUE',
+						details: {
+							flag: flagName,
+							input: `--${flagName}`,
+							value: name,
+							allowed,
+						},
+					},
+				);
+			}
+			result.push(match);
+		}
+
+		return result;
+	};
+}
+
+/** Parses one `--model` token into the models it names (comma-separated). */
+const parseModelList = csvEnumParser(models, 'model');
+
+/** Parses one `--source` token into the sources it names (comma-separated). */
+const parseSourceList = csvEnumParser(sources, 'source');
 
 /** Suppresses all output; the process exit code conveys the status instead. */
 const quietFlag = flag.boolean().alias('q').describe('Silent; exit code only');
@@ -19,11 +68,12 @@ const anthropicStatusBaseFlag = flag
 	.env('CLAUDE_DOWN_ANTHROPIC_STATUS_BASE')
 	.describe('Override Anthropic status page base URL');
 
-/** Selects which data sources to query; defaults to all available sources. */
+/** Selects which data sources to query; defaults to all available sources.
+ * Accepts comma-separated values and/or repeated flags. */
 const sourceSelectionFlag = flag
-	.array(flag.enum(sources))
+	.array(flag.custom(parseSourceList))
 	.alias('s')
-	.default([...sources])
+	.default([[...sources]])
 	.env('CLAUDE_DOWN_SOURCE')
 	.env('CLAUDE_DOWN_SOURCES') // plural form for convenience
 	.describe('Data source(s) to check');
@@ -33,45 +83,6 @@ const chromeFlag = flag
 	.string()
 	.env(CHROME_PATH_ENV)
 	.describe('Path to a Chrome/Chromium binary');
-
-/** Model names as a lookup set for validation without widening assertions. */
-const MODEL_NAMES: ReadonlySet<string> = new Set(models);
-
-/** Type guard narrowing an arbitrary string to a known {@link Model}. */
-function isModel(value: string): value is Model {
-	return MODEL_NAMES.has(value);
-}
-
-/** Parses one `--model` token into the models it names, splitting on commas so
- * `--model opus,fable` works alongside repeated `--model opus --model fable`. */
-function parseModelList(raw: unknown): readonly Model[] {
-	const result: Model[] = [];
-	for (const token of String(raw).split(',')) {
-		const name = token.trim();
-		if (name.length === 0) continue;
-		if (!isModel(name)) {
-			// Thrown ParseErrors are surfaced verbatim by dreamcli's flag parser,
-			// matching the built-in enum error format.
-			throw new ParseError(
-				`Invalid value '${name}' for flag --model. Allowed: ${
-					models.join(', ')
-				}`,
-				{
-					code: 'INVALID_VALUE',
-					details: {
-						flag: 'model',
-						input: '--model',
-						value: name,
-						allowed: models,
-					},
-				},
-			);
-		}
-		result.push(name);
-	}
-
-	return result;
-}
 
 /** Restricts reported incidents/components to those naming the given model(s).
  * Accepts comma-separated values and/or repeated flags. */
@@ -105,13 +116,22 @@ function selectedModels(flags: ModelFlagValues): Set<Model> {
 	return selected;
 }
 
+/** Flattens the per-occurrence `--source` lists into the sources to query. */
+function selectedSources(
+	source: readonly (readonly Source[])[],
+): readonly Source[] {
+	return source.flat();
+}
+
 export {
 	anthropicStatusBaseFlag,
 	chromeFlag,
 	modelConvenienceFlags,
 	modelFlag,
 	parseModelList,
+	parseSourceList,
 	quietFlag,
 	selectedModels,
+	selectedSources,
 	sourceSelectionFlag,
 };

@@ -1,11 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 import { execPath } from 'node:process';
 
-import { parseModelList, selectedModels } from '#claude-down/cli/flags.ts';
-import type { Model, StatusRow } from '#claude-down/cli/model.ts';
+import {
+	parseModelList,
+	parseSourceList,
+	selectedModels,
+	selectedSources,
+} from '#claude-down/cli/flags.ts';
+import type { Model, Source, StatusRow } from '#claude-down/cli/model.ts';
 import {
 	filterAnthropicByModels,
 	getExitCode,
+	summarizeExitCode,
 } from '#claude-down/cli/status.ts';
 import { CHROME_PATH_ENV } from '#claude-down/lib/constants.ts';
 import { findChrome } from '#claude-down/lib/downdetector/chrome.ts';
@@ -75,6 +81,31 @@ describe(parseModelList.name, () => {
 		expect(() => parseModelList('opus,bogus')).toThrow(
 			"Invalid value 'bogus' for flag --model. Allowed: opus, haiku, sonnet, mythos, fable",
 		);
+	});
+});
+
+describe(parseSourceList.name, () => {
+	test('splits a comma-separated token', () => {
+		expect(parseSourceList('anthropic,downdetector')).toEqual([
+			'anthropic',
+			'downdetector',
+		]);
+	});
+
+	test('throws a clear error for an unknown source', () => {
+		expect(() => parseSourceList('anthropic,bogus')).toThrow(
+			"Invalid value 'bogus' for flag --source. Allowed: anthropic, downdetector",
+		);
+	});
+});
+
+describe(selectedSources.name, () => {
+	test('flattens per-occurrence lists', () => {
+		const lists: readonly (readonly Source[])[] = [
+			['anthropic'],
+			['downdetector'],
+		];
+		expect(selectedSources(lists)).toEqual(['anthropic', 'downdetector']);
 	});
 });
 
@@ -196,6 +227,46 @@ describe('getExitCode', () => {
 				reportsOutage: false,
 			}),
 		).toBe(21);
+	});
+});
+
+describe(summarizeExitCode.name, () => {
+	const unreachableDowndetector: StatusRow = {
+		source: 'downdetector',
+		indicator: 'unavailable',
+		summaryText: 'CF challenge not cleared in time',
+		reportsOutage: false,
+	};
+
+	test('ignores an unreachable source when another was readable', () => {
+		// Anthropic operational with no incidents -> 0, despite Downdetector
+		// being unavailable (a flaky scrape must not force 21).
+		expect(summarizeExitCode([
+			anthropicRow({ indicator: 'none', incidents: null }),
+			unreachableDowndetector,
+		])).toBe(0);
+	});
+
+	test('keeps a real outage when another source is unreachable', () => {
+		expect(summarizeExitCode([
+			anthropicRow({ indicator: 'major' }),
+			unreachableDowndetector,
+		])).toBe(2);
+	});
+
+	test('surfaces 21 only when every source is unreachable', () => {
+		expect(summarizeExitCode([
+			anthropicRow({
+				indicator: 'unavailable',
+				incidents: null,
+				affectedComponents: null,
+			}),
+			unreachableDowndetector,
+		])).toBe(21);
+	});
+
+	test('is zero for no rows', () => {
+		expect(summarizeExitCode([])).toBe(0);
 	});
 });
 
