@@ -1,4 +1,4 @@
-import { flag } from '@kjanat/dreamcli';
+import { flag, ParseError } from '@kjanat/dreamcli';
 
 import { type Model, models, sources } from '#claude-down/cli/model.ts';
 import {
@@ -34,9 +34,49 @@ const chromeFlag = flag
 	.env(CHROME_PATH_ENV)
 	.describe('Path to a Chrome/Chromium binary');
 
-/** Restricts reported incidents/components to those naming the given model(s). */
+/** Model names as a lookup set for validation without widening assertions. */
+const MODEL_NAMES: ReadonlySet<string> = new Set(models);
+
+/** Type guard narrowing an arbitrary string to a known {@link Model}. */
+function isModel(value: string): value is Model {
+	return MODEL_NAMES.has(value);
+}
+
+/** Parses one `--model` token into the models it names, splitting on commas so
+ * `--model opus,fable` works alongside repeated `--model opus --model fable`. */
+function parseModelList(raw: unknown): readonly Model[] {
+	const result: Model[] = [];
+	for (const token of String(raw).split(',')) {
+		const name = token.trim();
+		if (name.length === 0) continue;
+		if (!isModel(name)) {
+			// Thrown ParseErrors are surfaced verbatim by dreamcli's flag parser,
+			// matching the built-in enum error format.
+			throw new ParseError(
+				`Invalid value '${name}' for flag --model. Allowed: ${
+					models.join(', ')
+				}`,
+				{
+					code: 'INVALID_VALUE',
+					details: {
+						flag: 'model',
+						input: '--model',
+						value: name,
+						allowed: models,
+					},
+				},
+			);
+		}
+		result.push(name);
+	}
+
+	return result;
+}
+
+/** Restricts reported incidents/components to those naming the given model(s).
+ * Accepts comma-separated values and/or repeated flags. */
 const modelFlag = flag
-	.array(flag.enum(models))
+	.array(flag.custom(parseModelList))
 	.alias('m')
 	.describe('Only report incidents/components mentioning these model(s)');
 
@@ -49,12 +89,15 @@ const modelConvenienceFlags = {
 	fable: flag.boolean().describe('Shortcut for --model fable'),
 } as const;
 
-/** Shape of the flag values used to determine which models were selected. */
-type ModelFlagValues = { model: readonly Model[] } & Record<Model, boolean>;
+/** Shape of the flag values used to determine which models were selected.
+ * `--model` resolves to one list per occurrence, flattened below. */
+type ModelFlagValues =
+	& { model: readonly (readonly Model[])[] }
+	& Record<Model, boolean>;
 
-/** Unions the `--model` array with any enabled per-model convenience flags. */
+/** Unions the `--model` lists with any enabled per-model convenience flags. */
 function selectedModels(flags: ModelFlagValues): Set<Model> {
-	const selected = new Set<Model>(flags.model);
+	const selected = new Set<Model>(flags.model.flat());
 	for (const model of models) {
 		if (flags[model]) selected.add(model);
 	}
@@ -67,6 +110,7 @@ export {
 	chromeFlag,
 	modelConvenienceFlags,
 	modelFlag,
+	parseModelList,
 	quietFlag,
 	selectedModels,
 	sourceSelectionFlag,

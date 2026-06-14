@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { execPath } from 'node:process';
 
-import { selectedModels } from '#claude-down/cli/flags.ts';
+import { parseModelList, selectedModels } from '#claude-down/cli/flags.ts';
 import type { Model, StatusRow } from '#claude-down/cli/model.ts';
 import {
 	filterAnthropicByModels,
@@ -33,7 +33,7 @@ const modelFlags = (
 	selected: readonly Model[],
 	booleans: Partial<Record<Model, boolean>> = {},
 ) => ({
-	model: selected,
+	model: selected.map((model) => [model]),
 	opus: false,
 	haiku: false,
 	sonnet: false,
@@ -55,6 +55,26 @@ describe('selectedModels', () => {
 
 	test('empty when nothing selected', () => {
 		expect(selectedModels(modelFlags([])).size).toBe(0);
+	});
+});
+
+describe(parseModelList.name, () => {
+	test('splits a comma-separated token and trims whitespace', () => {
+		expect(parseModelList('opus, fable ')).toEqual(['opus', 'fable']);
+	});
+
+	test('parses a single model', () => {
+		expect(parseModelList('mythos')).toEqual(['mythos']);
+	});
+
+	test('ignores empty segments', () => {
+		expect(parseModelList('opus,,fable,')).toEqual(['opus', 'fable']);
+	});
+
+	test('throws a clear error for an unknown model', () => {
+		expect(() => parseModelList('opus,bogus')).toThrow(
+			"Invalid value 'bogus' for flag --model. Allowed: opus, haiku, sonnet, mythos, fable",
+		);
 	});
 });
 
@@ -84,6 +104,20 @@ describe(filterAnthropicByModels.name, () => {
 		expect(filtered.indicator).toBe('major');
 		expect(filtered.summaryText).toContain('opus');
 		expect(filtered.summaryText).not.toContain('fable');
+	});
+
+	test('pluralizes the report count', () => {
+		const one = filterAnthropicByModels(
+			anthropicRow(),
+			new Set<Model>(['opus']),
+		);
+		expect(one.summaryText).toBe('1 report affecting opus');
+
+		const many = filterAnthropicByModels(
+			anthropicRow(),
+			new Set<Model>(['opus', 'sonnet']),
+		);
+		expect(many.summaryText).toBe('2 reports affecting opus, sonnet');
 	});
 
 	test('matches model names appearing only in components', () => {

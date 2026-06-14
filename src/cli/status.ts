@@ -167,7 +167,9 @@ function filterAnthropicByModels(
 		source: 'anthropic',
 		indicator: matchCount > 0 ? 'major' : 'none',
 		summaryText: matchCount > 0
-			? `${matchCount} report(s) affecting ${affectedModels.join(', ')}`
+			? `${matchCount} report${matchCount === 1 ? '' : 's'} affecting ${
+				affectedModels.join(', ')
+			}`
 			: `No incidents reported for ${[...selected].join(', ')}`,
 		incidents: incidents.length > 0 ? incidents : null,
 		affectedComponents: affectedComponents.length > 0
