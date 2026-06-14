@@ -1,26 +1,28 @@
 # claude-down
 
-**Is Claude down? Again?**
+is claude down (again) (yes). booga check, you no cry.
 
-> A tiny CLI tool to check if Claude is operational, combining official status
-> reports with community signals.
+claude no work? maybe you. maybe anthropic. (probably anthropic.) booga look two
+place same time:
 
-`claude-down` monitors two sources in parallel:
+- **status.claude.com** — what anthropic admit to.
+- **Downdetector** — what everyone else screaming about, usually first.
 
-1. **Anthropic Status Page** (`status.claude.com`): The authoritative source for
-   incident reports and component status.
-2. **Downdetector**: Community-driven signal that often leads official reports
-   by several minutes.
-
-Claude Fable 5 access is suspended right now — check if it's back:
+fable 5 cooked rn (anthropic suspend access). it back yet??
 
 ```bash
 npx -y claude-down@latest --fable
 ```
 
-## Installation
+## or just watch the page
 
-You can run it directly using `bunx` or `npx`:
+no install, no terminal. page poll itself, you stare:
+
+<https://kjanat.github.io/claude-down/>
+
+## get booga
+
+run direct, no install:
 
 ```bash
 bunx claude-down status
@@ -28,7 +30,7 @@ bunx claude-down status
 npx -y claude-down status
 ```
 
-Or install it globally:
+or keep forever:
 
 ```bash
 bun install -g claude-down
@@ -37,10 +39,10 @@ npm install -g claude-down
 ```
 
 <details>
-<summary>Preview (continuous) releases</summary>
+<summary>fresh builds (every commit)</summary>
 
-Every commit and PR is published to [pkg.pr.new]; the bot comments the exact URL
-on each PR. Run a preview build with any runner:
+every push + PR get published to [pkg.pr.new]. bot drop the url in the PR. run
+any sha:
 
 ```bash
 bunx https://pkg.pr.new/kjanat/claude-down@<sha> status   # or npx / pnpx
@@ -48,77 +50,72 @@ bunx https://pkg.pr.new/kjanat/claude-down@<sha> status   # or npx / pnpx
 
 </details>
 
-## Usage
+## how use
 
-### Human-readable summary
+### words for human
 
-The `status` command provides a status indicator, a brief description, and
-details from both sources.
+`status` give indicator, lil description, details from both place.
 
 ```bash
 claude-down status
 ```
 
-### JSON output
+### words for robot
 
-Get structured data for scripts or monitoring tools.
+json for your scripts and your little monitoring guys.
 
 ```bash
 claude-down status --json
 ```
 
-### Exit code only
+### no words, just number
 
-The exit code always reflects the worst status found (see [Exit Codes](#exit-codes)),
-whether or not output is rendered. Use `-q`/`--quiet` in CI/CD or shell scripts
-to suppress the report and rely on the exit code alone.
+exit code always tell truth (see [the numbers](#the-numbers)), output or not.
+slap `-q`/`--quiet` in CI when you only care about number.
 
 ```bash
 claude-down status -q
 ```
 
-### Specific source
+### pick your place
 
-Check a specific source using subcommands or the `--source` flag. `--source`
-accepts comma-separated values and/or repeated flags.
+subcommand or `--source`. `--source` eat commas and repeats.
 
 ```bash
-# Using subcommands
+# subcommand
 claude-down anthropic
 claude-down downdetector
 
-# Using flags
+# flag
 claude-down status --source anthropic
 claude-down status -s downdetector
 
-# Multiple sources
+# many
 claude-down status --source anthropic,downdetector
 claude-down status -s anthropic -s downdetector
 ```
 
-### Filter by model
+### pick your model
 
-Narrow incidents and components to those naming specific model families. The
-summary and exit code then reflect only the selected models, so you can alert on
-just the ones you depend on. Like `--source`, `--model` accepts comma-separated
-values and/or repeated flags; each model also has a convenience flag.
+only show incident/component that name model you care about. summary AND exit
+code shrink to just those. like `--source`, `--model` eat commas and repeats,
+and every model got shortcut flag.
 
 ```bash
-# Convenience flags
+# shortcut
 claude-down status --opus --sonnet
 
-# --model with comma-separated and/or repeated values
+# --model, commas and/or repeats
 claude-down status --model opus,sonnet
 claude-down status -m opus -m sonnet
 ```
 
-Available models: `opus`, `haiku`, `sonnet`, `mythos`, `fable`.
+models: `opus`, `haiku`, `sonnet`, `mythos`, `fable`.
 
-## Browser Usage
+## use in browser
 
-`claude-down` provides a browser-safe entry point that only includes the
-Anthropic Statuspage source (since Downdetector requires a local Chromium
-binary).
+browser-safe door, anthropic only (downdetector need real chromium, no work in
+browser).
 
 ```typescript
 import { checkAnthropic } from "claude-down/browser";
@@ -135,46 +132,36 @@ if (result.kind === "ok") {
 }
 ```
 
-## Exit Codes
+## the numbers
 
-The CLI returns specific exit codes based on the severity of the outage. The
-code is set on every run (not only with `--quiet`) and reflects the most severe
-status across the checked sources.
+exit code = how bad. set every run (not just `--quiet`), worst source win.
 
-|   Code | Status      | Description                                                   |
-| -----: | :---------- | :------------------------------------------------------------ |
-|  **0** | Operational | Everything is working normally.                               |
-|  **1** | Degraded    | Minor issue, or an active Anthropic incident.                 |
-|  **2** | Outage      | Major/critical outage or Downdetector reports Claude is down. |
-| **21** | Unknown     | Every checked source was unreachable.                         |
+|   Code | Vibe      | what happen                                             |
+| -----: | :-------- | :------------------------------------------------------ |
+|  **0** | all good  | everything work. go back to your life.                  |
+|  **1** | meh       | minor thing, or anthropic got live incident.            |
+|  **2** | cooked    | major/critical outage, or downdetector say claude down. |
+| **21** | who knows | every source booga try was unreachable.                 |
 
-An unreachable source is treated as _unknown_, not _down_: code `21` is only
-returned when **all** selected sources are unreachable, so a flaky Downdetector
-scrape never masks an otherwise-operational result.
+source booga no reach = unknown, NOT down. `21` only when EVERY source dead, so
+one flaky downdetector scrape no ruin your day.
 
-## Development
+## who do all this
 
-This project is built with [dreamcli].
+booga no write flag parser. booga no write `--help`, tab-complete, json mode,
+exit codes. all that [dreamcli]. booga just point at anthropic and shitpost.
 
-### Setup
+you want make own CLI look this clean? → [dreamcli]
 
-```bash
-bun install
-```
-
-### Build
+## hack on it
 
 ```bash
-bun run build
+bun install   # setup
+bun run build # build
+bun test      # test
 ```
 
-### Test
-
-```bash
-bun test
-```
-
-## License
+## license
 
 [MIT][LICENSE] © 2026 Kaj Kowalski
 
