@@ -160,13 +160,27 @@ async function launchBrowser(chrome: string): Promise<LaunchBrowserResult> {
  * @param userDataDir - The path to the temporary user data directory to remove.
  */
 function cleanupBrowser(proc: ChildProcess, userDataDir: string): void {
-	proc.kill();
-	rmSync(userDataDir, {
-		recursive: true,
-		force: true,
-		maxRetries: 5,
-		retryDelay: 100,
-	});
+	// `proc.kill()` only signals the parent. On Windows, Chrome's child
+	// processes keep handles on the user-data-dir, so we kill the whole tree
+	// (taskkill /t) to release the locks before removing the directory.
+	if (process.platform === 'win32' && proc.pid !== undefined) {
+		spawnSync('taskkill', ['/pid', String(proc.pid), '/t', '/f']);
+	} else {
+		proc.kill();
+	}
+
+	try {
+		rmSync(userDataDir, {
+			recursive: true,
+			force: true,
+			maxRetries: 5,
+			retryDelay: 100,
+		});
+	} catch {
+		// Best-effort: a lingering Windows lock can keep the temp dir around.
+		// It lives under the OS temp dir and gets reaped later; a failed
+		// cleanup must never mask or replace the actual status result.
+	}
 }
 
 export { cleanupBrowser, findChrome, launchBrowser };
