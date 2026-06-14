@@ -1,5 +1,5 @@
 import { command, type Out } from '@kjanat/dreamcli';
-import { exit } from 'node:process';
+import process from 'node:process';
 
 import {
 	anthropicStatusBaseFlag,
@@ -27,13 +27,15 @@ function finishStatus(
 	quiet: boolean,
 	out: Out,
 ): void {
-	if (quiet) {
-		const exitCode = summarizeExitCode(rows);
-		if (exitCode !== 0) exit(exitCode);
-		return;
+	if (!quiet) {
+		renderStatusRows(sortRows(rows), out);
 	}
 
-	renderStatusRows(sortRows(rows), out);
+	// Reflect status severity in the exit code regardless of --quiet. We set
+	// process.exitCode rather than calling exit() so the in-process testkit is
+	// not killed; main.ts applies it on a successful run, where dreamcli would
+	// otherwise force a 0 exit code.
+	process.exitCode = summarizeExitCode(rows);
 }
 
 function applyModelFilter(
