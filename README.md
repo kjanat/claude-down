@@ -1,5 +1,8 @@
 # claude-down
 
+[![NPM Version](https://img.shields.io/npm/v/claude-down?logo=npm&labelColor=CB3837&color=black)](https://www.npmjs.com/package/claude-down)
+[![pkg.pr.new](https://pkg.pr.new/badge/kjanat/claude-down)](https://pkg.pr.new/~/kjanat/claude-down)
+
 is claude down (again) (yes). booga check, you no cry.
 
 claude no work? maybe you. maybe anthropic. (probably anthropic.) booga look two
