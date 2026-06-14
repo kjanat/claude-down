@@ -1,21 +1,27 @@
-import { setTimeout as sleep } from 'node:timers/promises';
-
 import type { CdpSend } from '#claude-down/lib/downdetector/cdp.ts';
+import { setTimeout } from 'node:timers/promises';
 
+/** Represents the structure of the snapshot taken from the page. */
 type PogoSnapshot = {
+	/** The page's title. */
 	title: string;
+	/** The Pogo configuration object, which may indicate an outage. */
 	pogo: { outage?: boolean } | null;
+	/** The text content of the first <h1> element on the page, or null if it doesn't exist. */
 	h1: string | null;
 };
 
+/** Represents the structure of the result returned from evaluating a CDP expression. */
 type CdpEvalResult = {
 	result: {
 		result: {
+			/** The string value returned from the CDP evaluation. */
 			value: string;
 		};
 	};
 };
 
+/** Type guard to check if a value is a {@linkcode CdpEvalResult} object. */
 function isCdpEvalResult(value: unknown): value is CdpEvalResult {
 	return (
 		value !== null
@@ -31,20 +37,37 @@ function isCdpEvalResult(value: unknown): value is CdpEvalResult {
 	);
 }
 
+/** Type guard to check if a value is a {@linkcode PogoSnapshot} object.
+ * @param value - The value to check.
+ * @returns `true` if the value is a PogoSnapshot, or `false` otherwise.
+ */
 function isPogoSnapshot(value: unknown): value is PogoSnapshot {
 	if (typeof value !== 'object' || value === null) return false;
 	if (!('title' in value) || typeof value.title !== 'string') return false;
-	if ('h1' in value && value.h1 !== null && typeof value.h1 !== 'string') return false;
+	if ('h1' in value && value.h1 !== null && typeof value.h1 !== 'string') {
+		return false;
+	}
 	if (!('pogo' in value)) return false;
-	if (value.pogo === null) return true;
-	if (typeof value.pogo !== 'object') return false;
+	const { pogo } = value;
 
-	const pogo = value.pogo;
-	if ('outage' in pogo && pogo.outage !== undefined && typeof pogo.outage !== 'boolean') return false;
+	if (pogo === null) return true;
+	if (typeof pogo !== 'object') return false;
+
+	if (
+		'outage' in pogo && pogo.outage !== undefined
+		&& typeof pogo.outage !== 'boolean'
+	) return false;
 
 	return true;
 }
 
+/** Polls the page for a snapshot of the Pogo configuration and page heading within a specified timeout.
+ * @param send - A function to send CDP commands.
+ * @param timeoutMs - The maximum time to wait for a valid snapshot, in milliseconds.
+ * @returns A promise that resolves to an object containing the Pogo
+ * configuration and page heading if a valid snapshot is found,
+ * or `null` if the timeout is reached without finding a valid snapshot.
+ */
 async function pollPogoSnapshot(
 	send: CdpSend,
 	timeoutMs: number,
@@ -54,8 +77,11 @@ async function pollPogoSnapshot(
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
 		const response = await send('Runtime.evaluate', {
-			expression:
-				'JSON.stringify({ title: document.title, pogo: window.PogoConfig ?? null, h1: document.querySelector("h1")?.innerText ?? null })',
+			expression: `JSON.stringify({
+	title: document.title,
+	pogo: window.PogoConfig ?? null,
+	h1: document.querySelector('h1')?.innerText ?? null,
+})`,
 			returnByValue: true,
 		});
 
@@ -76,7 +102,7 @@ async function pollPogoSnapshot(
 			}
 		}
 
-		await sleep(700);
+		await setTimeout(700);
 	}
 
 	return null;

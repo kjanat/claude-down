@@ -2,12 +2,15 @@
 
 **Is Claude down? Again?**
 
-> A tiny CLI tool to check if Claude is operational, combining official status reports with community signals.
+> A tiny CLI tool to check if Claude is operational, combining official status
+> reports with community signals.
 
 `claude-down` monitors two sources in parallel:
 
-1. **Anthropic Status Page** (`status.claude.com`): The authoritative source for incident reports and component status.
-2. **Downdetector**: Community-driven signal that often leads official reports by several minutes.
+1. **Anthropic Status Page** (`status.claude.com`): The authoritative source for
+   incident reports and component status.
+2. **Downdetector**: Community-driven signal that often leads official reports
+   by several minutes.
 
 ## Installation
 
@@ -27,11 +30,24 @@ bun install -g claude-down
 npm install -g claude-down
 ```
 
+<details>
+<summary>Preview (continuous) releases</summary>
+
+Every commit and PR is published to [pkg.pr.new]; the bot comments the exact URL
+on each PR. Run a preview build with any runner:
+
+```bash
+bunx https://pkg.pr.new/kjanat/claude-down@<sha> status   # or npx / pnpx
+```
+
+</details>
+
 ## Usage
 
 ### Human-readable summary
 
-The `status` command provides a status indicator, a brief description, and details from both sources.
+The `status` command provides a status indicator, a brief description, and
+details from both sources.
 
 ```bash
 claude-down status
@@ -70,7 +86,9 @@ claude-down status -s downdetector
 
 ## Browser Usage
 
-`claude-down` provides a browser-safe entry point that only includes the Anthropic Statuspage source (since Downdetector requires a local Chromium binary).
+`claude-down` provides a browser-safe entry point that only includes the
+Anthropic Statuspage source (since Downdetector requires a local Chromium
+binary).
 
 ```typescript
 import { checkAnthropic } from "claude-down/browser";
@@ -126,3 +144,4 @@ bun test
 
 [LICENSE]: https://github.com/kjanat/claude-down/blob/master/LICENSE
 [dreamcli]: https://github.com/kjanat/dreamcli
+[pkg.pr.new]: https://pkg.pr.new

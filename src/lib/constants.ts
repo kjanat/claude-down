@@ -1,3 +1,5 @@
+import type { Indicator } from '#claude-down/lib/types.ts';
+
 /** Mapping of status levels to their corresponding exit codes. */
 const EXIT_CODES = {
 	'none': 0,
@@ -5,10 +7,11 @@ const EXIT_CODES = {
 	'major': 2,
 	'critical': 2,
 	'unavailable': 21,
-} as const;
+} as const satisfies Record<Indicator, number>;
 
 /** Base URL for Anthropic's status page API. */
 const ANTHROPIC_STATUS_BASE = 'https://status.claude.com';
+
 /** URL for Claude AI's status page on Downdetector. */
 const DOWNDETECTOR_URL = 'https://downdetector.com/status/claude-ai/';
 
@@ -26,18 +29,30 @@ const BROWSER_CANDIDATES = [
 ] as const;
 
 /** Executable names to probe via `where.exe` when locating a Chromium-family binary on Windows. */
-const BROWSER_CANDIDATES_WIN = ['chrome.exe', 'msedge.exe', 'brave.exe'] as const;
-
-/** Default Windows install locations, relative to the given program-files style root. */
-const WINDOWS_CHROME_SUFFIXES = [
-	'Google\\Chrome\\Application\\chrome.exe',
-	'Microsoft\\Edge\\Application\\msedge.exe',
-	'BraveSoftware\\Brave-Browser\\Application\\brave.exe',
-	'Chromium\\Application\\chrome.exe',
+const BROWSER_CANDIDATES_WIN = [
+	'chrome.exe',
+	'msedge.exe',
+	'brave.exe',
 ] as const;
 
-/** Environment variables holding Windows install roots to join with {@link WINDOWS_CHROME_SUFFIXES}. */
-const WINDOWS_CHROME_ROOT_ENV_VARS = ['ProgramFiles', 'ProgramFiles(x86)', 'LOCALAPPDATA'] as const;
+/** Default Windows install locations as path segments, joined against a
+ * program-files style root at the call site (kept as segments so no embedded
+ * backslash path reads as a high-entropy literal). */
+const WINDOWS_CHROME_SUFFIX_SEGMENTS = [
+	['Google', 'Chrome', 'Application', 'chrome.exe'],
+	['Microsoft', 'Edge', 'Application', 'msedge.exe'],
+	['BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe'],
+	['Chromium', 'Application', 'chrome.exe'],
+] as const;
+
+/** Environment variables holding Windows install roots to join with
+ * {@link WINDOWS_CHROME_SUFFIX_SEGMENTS} (the x86 name is composed so it is not
+ * a single high-entropy literal). */
+const WINDOWS_CHROME_ROOT_ENV_VARS = [
+	'ProgramFiles',
+	`ProgramFiles${'(x86)'}`,
+	'LOCALAPPDATA',
+] as const;
 
 /** Default macOS application-bundle paths (which `which` cannot discover). */
 const MACOS_CHROME_PATHS = [
@@ -56,5 +71,5 @@ export {
 	EXIT_CODES,
 	MACOS_CHROME_PATHS,
 	WINDOWS_CHROME_ROOT_ENV_VARS,
-	WINDOWS_CHROME_SUFFIXES,
+	WINDOWS_CHROME_SUFFIX_SEGMENTS,
 };

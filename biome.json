@@ -7,12 +7,10 @@
 		"defaultBranch": "master"
 	},
 	"files": {
-		"includes": ["**", "!!**/dist"]
+		"includes": ["**", "!!**/dist"],
+		"ignoreUnknown": true
 	},
-	"formatter": {
-		"enabled": false,
-		"indentStyle": "tab"
-	},
+	"formatter": { "enabled": false },
 	"linter": {
 		"enabled": true,
 		"rules": {
@@ -20,16 +18,22 @@
 			"complexity": {
 				"preset": "recommended",
 				"noExcessiveCognitiveComplexity": "warn"
-			}
+			},
+			"a11y": { "preset": "none" },
+			"correctness": { "preset": "none" },
+			"security": { "preset": "recommended", "noSecrets": "error" },
+			"performance": { "preset": "none" },
+			"style": { "preset": "none", "useDestructuring": "on" },
+			"nursery": { "preset": "recommended" },
+			"suspicious": { "preset": "none" }
 		},
 		"domains": {
 			"project": "recommended",
+			"test": "recommended",
 			"types": "recommended"
 		}
 	},
-	"javascript": {
-		"formatter": { "quoteStyle": "single" }
-	},
+	"javascript": {},
 	"assist": {
 		"enabled": true,
 		"actions": {
@@ -39,5 +43,17 @@
 				"useSortedInterfaceMembers": "on"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["src/lib/downdetector/**", "src/cli/**", "src/main.ts"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					}
+				}
+			}
+		}
+	]
 }

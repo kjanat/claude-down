@@ -3,11 +3,16 @@ import { execPath } from 'node:process';
 
 import { selectedModels } from '#claude-down/cli/flags.ts';
 import type { Model, StatusRow } from '#claude-down/cli/model.ts';
-import { filterAnthropicByModels, getExitCode } from '#claude-down/cli/status.ts';
+import {
+	filterAnthropicByModels,
+	getExitCode,
+} from '#claude-down/cli/status.ts';
 import { CHROME_PATH_ENV } from '#claude-down/lib/constants.ts';
 import { findChrome } from '#claude-down/lib/downdetector/chrome.ts';
 
-function anthropicRow(overrides: Partial<Extract<StatusRow, { source: 'anthropic' }>> = {}): StatusRow {
+function anthropicRow(
+	overrides: Partial<Extract<StatusRow, { source: 'anthropic' }>> = {},
+): StatusRow {
 	return {
 		source: 'anthropic',
 		indicator: 'major',
@@ -16,12 +21,18 @@ function anthropicRow(overrides: Partial<Extract<StatusRow, { source: 'anthropic
 			{ name: 'Claude Opus 4.8 degraded', status: 'investigating' },
 			{ name: 'Sonnet latency', status: 'monitoring' },
 		],
-		affectedComponents: [{ name: 'Claude Haiku API', status: 'degraded_performance' }],
+		affectedComponents: [{
+			name: 'Claude Haiku API',
+			status: 'degraded_performance',
+		}],
 		...overrides,
 	};
 }
 
-const modelFlags = (selected: readonly Model[], booleans: Partial<Record<Model, boolean>> = {}) => ({
+const modelFlags = (
+	selected: readonly Model[],
+	booleans: Partial<Record<Model, boolean>> = {},
+) => ({
 	model: selected,
 	opus: false,
 	haiku: false,
@@ -33,7 +44,10 @@ const modelFlags = (selected: readonly Model[], booleans: Partial<Record<Model, 
 
 describe('selectedModels', () => {
 	test('unions --model array with convenience flags and dedupes', () => {
-		expect([...selectedModels(modelFlags(['opus'], { sonnet: true, opus: true }))].sort()).toEqual([
+		expect(
+			[...selectedModels(modelFlags(['opus'], { sonnet: true, opus: true }))]
+				.sort(),
+		).toEqual([
 			'opus',
 			'sonnet',
 		]);
@@ -44,29 +58,44 @@ describe('selectedModels', () => {
 	});
 });
 
-describe('filterAnthropicByModels', () => {
+describe(filterAnthropicByModels.name, () => {
 	test('keeps only matching incidents/components and drives a major result', () => {
-		const filtered = filterAnthropicByModels(anthropicRow(), new Set<Model>(['opus']));
+		const filtered = filterAnthropicByModels(
+			anthropicRow(),
+			new Set<Model>(['opus']),
+		);
 		expect(filtered).toMatchObject({
 			source: 'anthropic',
 			indicator: 'major',
-			incidents: [{ name: 'Claude Opus 4.8 degraded', status: 'investigating' }],
+			incidents: [{
+				name: 'Claude Opus 4.8 degraded',
+				status: 'investigating',
+			}],
 			affectedComponents: null,
 		});
 		expect(filtered.summaryText).toContain('opus');
 	});
 
 	test('matches model names appearing only in components', () => {
-		const filtered = filterAnthropicByModels(anthropicRow(), new Set<Model>(['haiku']));
+		const filtered = filterAnthropicByModels(
+			anthropicRow(),
+			new Set<Model>(['haiku']),
+		);
 		expect(filtered).toMatchObject({
 			indicator: 'major',
 			incidents: null,
-			affectedComponents: [{ name: 'Claude Haiku API', status: 'degraded_performance' }],
+			affectedComponents: [{
+				name: 'Claude Haiku API',
+				status: 'degraded_performance',
+			}],
 		});
 	});
 
 	test('reports operational when no incident mentions the model', () => {
-		const filtered = filterAnthropicByModels(anthropicRow(), new Set<Model>(['fable']));
+		const filtered = filterAnthropicByModels(
+			anthropicRow(),
+			new Set<Model>(['fable']),
+		);
 		expect(filtered).toMatchObject({
 			indicator: 'none',
 			incidents: null,
@@ -81,7 +110,11 @@ describe('filterAnthropicByModels', () => {
 	});
 
 	test('leaves unavailable rows untouched', () => {
-		const row = anthropicRow({ indicator: 'unavailable', incidents: null, affectedComponents: null });
+		const row = anthropicRow({
+			indicator: 'unavailable',
+			incidents: null,
+			affectedComponents: null,
+		});
 		expect(filterAnthropicByModels(row, new Set<Model>(['opus']))).toBe(row);
 	});
 
@@ -102,7 +135,8 @@ describe('getExitCode', () => {
 	});
 
 	test('is zero when operational with no incidents', () => {
-		expect(getExitCode(anthropicRow({ indicator: 'none', incidents: null }))).toBe(0);
+		expect(getExitCode(anthropicRow({ indicator: 'none', incidents: null })))
+			.toBe(0);
 	});
 
 	test('reflects the indicator when it is more severe than an incident', () => {

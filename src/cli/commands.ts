@@ -22,7 +22,11 @@ import {
 	summarizeExitCode,
 } from '#claude-down/cli/status.ts';
 
-function finishStatus(rows: readonly StatusRow[], quiet: boolean, out: Out): void {
+function finishStatus(
+	rows: readonly StatusRow[],
+	quiet: boolean,
+	out: Out,
+): void {
 	if (quiet) {
 		const exitCode = summarizeExitCode(rows);
 		if (exitCode !== 0) exit(exitCode);
@@ -32,7 +36,10 @@ function finishStatus(rows: readonly StatusRow[], quiet: boolean, out: Out): voi
 	renderStatusRows(sortRows(rows), out);
 }
 
-function applyModelFilter(rows: readonly StatusRow[], selected: ReadonlySet<Model>): readonly StatusRow[] {
+function applyModelFilter(
+	rows: readonly StatusRow[],
+	selected: ReadonlySet<Model>,
+): readonly StatusRow[] {
 	if (selected.size === 0) return rows;
 	return rows.map((row) => filterAnthropicByModels(row, selected));
 }
@@ -54,8 +61,9 @@ const statusCommand = command('status')
 	.flag('mythos', modelConvenienceFlags.mythos)
 	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
-		const rows = await checkSources(flags.source, flags.anthropicStatusBase, flags.chrome);
-		finishStatus(applyModelFilter(rows, selectedModels(flags)), flags.quiet, out);
+		const { source, anthropicStatusBase, chrome, quiet } = flags;
+		const rows = await checkSources(source, anthropicStatusBase, chrome);
+		finishStatus(applyModelFilter(rows, selectedModels(flags)), quiet, out);
 	});
 
 const anthropicCommand = command('anthropic')
@@ -72,7 +80,11 @@ const anthropicCommand = command('anthropic')
 	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
 		const row = await checkAnthropicSource(flags.anthropicStatusBase);
-		finishStatus(applyModelFilter([row], selectedModels(flags)), flags.quiet, out);
+		finishStatus(
+			applyModelFilter([row], selectedModels(flags)),
+			flags.quiet,
+			out,
+		);
 	});
 
 const downdetectorCommand = command('downdetector')

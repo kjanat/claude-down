@@ -1,7 +1,11 @@
 import { cli } from '@kjanat/dreamcli';
 import pkg from 'claude-down/package.json' with { type: 'json' };
 
-import { anthropicCommand, downdetectorCommand, statusCommand } from '#claude-down/cli/commands.ts';
+import {
+	anthropicCommand,
+	downdetectorCommand,
+	statusCommand,
+} from '#claude-down/cli/commands.ts';
 
 const repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '');
 

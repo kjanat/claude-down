@@ -1,19 +1,82 @@
-import type { EXIT_CODES } from '#claude-down/lib/constants.ts';
-import type { Summary } from 'statuspage.io';
+import type {
+	Component,
+	IncidentImpact,
+	IncidentStatus,
+	Summary,
+} from 'statuspage.io';
 
-/** Indicator represents the specific status code or condition that can be used to determine the state of a service. */
-type Indicator = keyof typeof EXIT_CODES;
-type AvailableIndicator = Exclude<Indicator, 'unavailable'>;
+/** String values of `statuspage.io`'s {@linkcode IncidentImpact} enum. */
+type IncidentImpactValue = `${IncidentImpact}`;
 
-/** A signal represents the outcome of a status check, indicating whether the service is down and providing relevant information. */
+/** String values of `statuspage.io`'s {@linkcode IncidentStatus} enum. */
+type IncidentStatusValue = `${IncidentStatus}`;
+
+/** Status for the state of a service.
+ * - `'unavailable'` when a source can't be reached. */
+type Indicator = IncidentImpactValue | 'unavailable';
+
+/** The closed set of component statuses `statuspage.io` emits.
+ *
+ * Hand-rolled because upstream types {@linkcode Component["status"]} as `string`. */
+type ComponentStatus =
+	| 'operational'
+	| 'degraded_performance'
+	| 'partial_outage'
+	| 'major_outage'
+	| 'under_maintenance' // unsure?
+	| Component['status'];
+
+/** A signal represents the outcome of a status check. */
 type Signal =
-	| { ok: true; down: true; reason: string }
-	| { ok: true; down: false }
-	| { ok: false; error: string };
+	| {
+		/** The check was successful. */
+		ok: true;
+		/** The service is down. */
+		down: true;
+		/** The reason for the downtime. */
+		reason: string;
+	}
+	| {
+		/** The check was successful. */
+		ok: true;
+		/** The service is up. */
+		down: false;
+	}
+	| {
+		/** The check failed. */
+		ok: false;
+		/** The reason for the failure. */
+		error: string;
+	};
 
-/** The result of a status check, which can either be a successful summary or an unknown state with a reason. */
+/** The result of a status check. */
 type Result =
-	| { kind: 'ok'; summary: Summary }
-	| { kind: 'unknown'; reason: string };
+	| {
+		/** Headers from the response, included when available for debugging purposes. */
+		headers: Headers;
+		/** A discriminant property that indicates the type of result.
+		 * - `'ok'` for a successful summary. */
+		kind: 'ok';
+		/** The summary of the status page, included when the result is 'ok'. @see {@linkcode Summary} */
+		summary: Summary;
+	}
+	| {
+		/** Headers from the response, included when available for debugging purposes. */
+		headers?: Headers;
+		/** A discriminant property that indicates the type of result.
+		 * - `'unknown'` for an unknown state. */
+		kind: 'unknown';
+		/** The reason for the unknown state. */
+		reason: string;
+	};
 
-export type { AvailableIndicator, Indicator, Result, Signal, Summary };
+export type {
+	ComponentStatus,
+	IncidentImpactValue,
+	IncidentStatusValue,
+	Indicator,
+	Result,
+	Signal,
+};
+
+export type { Summary } from 'statuspage.io';

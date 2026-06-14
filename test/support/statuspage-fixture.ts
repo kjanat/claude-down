@@ -1,6 +1,8 @@
-import { file } from 'bun';
+import { file, serve } from 'bun';
 
 const anthropicStatusBaseEnvVar = 'CLAUDE_DOWN_ANTHROPIC_STATUS_BASE';
+const cacheControlHeader =
+	'max-age=3, public, s-maxage=10, stale-while-revalidate=20, stale-if-error=3600';
 
 type SummaryFixtureName = 'anthropic-down.json' | 'anthropic-up.json';
 
@@ -10,13 +12,18 @@ type FixtureServer = {
 	stop(): void;
 };
 
-async function readSummaryFixture(fixtureName: SummaryFixtureName): Promise<string> {
-	return file(new URL(import.meta.resolve(`#test/fixtures/${fixtureName}`))).text();
+async function readSummaryFixture(
+	fixtureName: SummaryFixtureName,
+): Promise<string> {
+	return file(new URL(import.meta.resolve(`#test/fixtures/${fixtureName}`)))
+		.text();
 }
 
-async function startSummaryFixtureServer(summaryBody: string): Promise<FixtureServer> {
+async function startSummaryFixtureServer(
+	summaryBody: string,
+): Promise<FixtureServer> {
 	const requests: string[] = [];
-	const server = Bun.serve({
+	const server = serve({
 		hostname: '127.0.0.1',
 		port: 0,
 		fetch(req) {
@@ -26,7 +33,10 @@ async function startSummaryFixtureServer(summaryBody: string): Promise<FixtureSe
 			if (req.method === 'GET' && url.pathname === '/api/v2/summary.json') {
 				return new Response(summaryBody, {
 					status: 200,
-					headers: { 'content-type': 'application/json' },
+					headers: {
+						'cache-control': cacheControlHeader,
+						'content-type': 'application/json',
+					},
 				});
 			}
 
@@ -48,7 +58,9 @@ async function withSummaryFixture<T>(
 	fixtureName: SummaryFixtureName,
 	run: (server: FixtureServer) => Promise<T>,
 ): Promise<T> {
-	const server = await startSummaryFixtureServer(await readSummaryFixture(fixtureName));
+	const server = await startSummaryFixtureServer(
+		await readSummaryFixture(fixtureName),
+	);
 
 	try {
 		return await run(server);
@@ -57,5 +69,5 @@ async function withSummaryFixture<T>(
 	}
 }
 
-export { anthropicStatusBaseEnvVar, withSummaryFixture };
+export { anthropicStatusBaseEnvVar, cacheControlHeader, withSummaryFixture };
 export type { FixtureServer, SummaryFixtureName };

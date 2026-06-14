@@ -3,17 +3,48 @@ import type { Source, StatusRow } from '#claude-down/cli/model.ts';
 import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
 import { EXIT_CODES } from '#claude-down/lib/constants.ts';
 import { checkDownDetector } from '#claude-down/lib/downdetector.ts';
-import type { AvailableIndicator } from '#claude-down/lib/types.ts';
+import type {
+	ComponentStatus,
+	IncidentImpactValue,
+} from '#claude-down/lib/types.ts';
 
-function normalizeIndicator(value: string): AvailableIndicator {
-	if (value === 'none' || value === 'minor' || value === 'major' || value === 'critical') {
+import { IncidentImpact } from 'statuspage.io';
+
+/** A set of all possible incident impact indicators emitted by `statuspage.io`. */
+const INCIDENT_IMPACT_INDICATORS = new Set<string>(
+	Object.values(IncidentImpact),
+);
+
+function isAvailableIndicator(value: string): value is IncidentImpactValue {
+	return INCIDENT_IMPACT_INDICATORS.has(value);
+}
+/** Normalizes a string value to a valid {@linkcode IncidentImpactValue}.
+ *
+ * @param value - The string value to normalize.
+ * @default `'critical'` if the value is unrecognized.
+ * @returns The normalized IncidentImpactValue value, or `'critical'` if the input is unrecognized.
+ */
+function normalizeIndicator(value: string): IncidentImpactValue {
+	return isAvailableIndicator(value) ? value : IncidentImpact.Critical;
+}
+
+function normalizeComponentStatus(value: string): ComponentStatus {
+	if (
+		value === 'operational'
+		|| value === 'degraded_performance'
+		|| value === 'partial_outage'
+		|| value === 'major_outage'
+		|| value === 'under_maintenance'
+	) {
 		return value;
 	}
 
-	return 'critical';
+	return 'major_outage';
 }
 
-async function checkAnthropicSource(anthropicStatusBase: string): Promise<StatusRow> {
+async function checkAnthropicSource(
+	anthropicStatusBase: string | URL,
+): Promise<StatusRow> {
 	const result = await checkAnthropic(anthropicStatusBase);
 	if (result.kind === 'unknown') {
 		return {
@@ -35,15 +66,23 @@ async function checkAnthropicSource(anthropicStatusBase: string): Promise<Status
 		indicator,
 		summaryText: result.summary.status.description,
 		incidents: result.summary.incidents.length > 0
-			? result.summary.incidents.map((incident) => ({ name: incident.name, status: incident.status }))
+			? result.summary.incidents.map((incident) => ({
+				name: incident.name,
+				status: incident.status,
+			}))
 			: null,
 		affectedComponents: affectedComponents.length > 0
-			? affectedComponents.map((component) => ({ name: component.name, status: component.status }))
+			? affectedComponents.map((component) => ({
+				name: component.name,
+				status: normalizeComponentStatus(component.status),
+			}))
 			: null,
 	};
 }
 
-async function checkDowndetectorSource(chromePath?: string): Promise<StatusRow> {
+async function checkDowndetectorSource(
+	chromePath?: string,
+): Promise<StatusRow> {
 	const result = await checkDownDetector(chromePath);
 	if (!result.ok) {
 		return {
@@ -64,7 +103,7 @@ async function checkDowndetectorSource(chromePath?: string): Promise<StatusRow> 
 
 async function checkSource(
 	source: Source,
-	anthropicStatusBase: string,
+	anthropicStatusBase: string | URL,
 	chromePath?: string,
 ): Promise<StatusRow> {
 	switch (source) {
@@ -77,10 +116,14 @@ async function checkSource(
 
 async function checkSources(
 	sources: readonly Source[],
-	anthropicStatusBase: string,
+	anthropicStatusBase: string | URL,
 	chromePath?: string,
 ): Promise<readonly StatusRow[]> {
-	return Promise.all(sources.map((source) => checkSource(source, anthropicStatusBase, chromePath)));
+	return Promise.all(
+		sources.map((source) =>
+			checkSource(source, anthropicStatusBase, chromePath)
+		),
+	);
 }
 
 /**
@@ -88,14 +131,26 @@ async function checkSources(
  * and re-derives its result from those matches (operational when none match).
  * Other rows, unavailable rows, and the empty selection pass through unchanged.
  */
-function filterAnthropicByModels(row: StatusRow, selected: ReadonlySet<Model>): StatusRow {
-	if (row.source !== 'anthropic' || selected.size === 0 || row.indicator === 'unavailable') {
+function filterAnthropicByModels(
+	row: StatusRow,
+	selected: ReadonlySet<Model>,
+): StatusRow {
+	if (
+		row.source !== 'anthropic' || selected.size === 0
+		|| row.indicator === 'unavailable'
+	) {
 		return row;
 	}
 
-	const incidents = row.incidents?.filter((incident) => nameMatchesModels(incident.name, selected)) ?? [];
-	const affectedComponents = row.affectedComponents?.filter((component) => nameMatchesModels(component.name, selected))
-		?? [];
+	const incidents =
+		row.incidents?.filter((incident) =>
+			nameMatchesModels(incident.name, selected)
+		) ?? [];
+	const affectedComponents =
+		row.affectedComponents?.filter((component) =>
+			nameMatchesModels(component.name, selected)
+		)
+			?? [];
 
 	const label = [...selected].join(', ');
 	const matchCount = incidents.length + affectedComponents.length;
@@ -107,7 +162,9 @@ function filterAnthropicByModels(row: StatusRow, selected: ReadonlySet<Model>): 
 			? `${matchCount} report(s) affecting ${label}`
 			: `No incidents reported for ${label}`,
 		incidents: incidents.length > 0 ? incidents : null,
-		affectedComponents: affectedComponents.length > 0 ? affectedComponents : null,
+		affectedComponents: affectedComponents.length > 0
+			? affectedComponents
+			: null,
 	};
 }
 
@@ -122,11 +179,16 @@ function getExitCode(row: StatusRow): number {
 }
 
 function summarizeExitCode(rows: readonly StatusRow[]): number {
-	return rows.reduce<number>((max, row) => Math.max(max, getExitCode(row)), EXIT_CODES.none);
+	return rows.reduce<number>(
+		(max, row) => Math.max(max, getExitCode(row)),
+		EXIT_CODES.none,
+	);
 }
 
 function sortRows(rows: readonly StatusRow[]): StatusRow[] {
-	return [...rows].sort((left, right) => left.source.localeCompare(right.source));
+	return [...rows].sort((left, right) =>
+		left.source.localeCompare(right.source)
+	);
 }
 
 export {
