@@ -2,8 +2,8 @@
 
 import { claudeDown } from '#claude-down/cli';
 import { helpFooter, wantsHelp } from '#claude-down/cli/help-footer';
+import pkg from '#pkg' with { type: 'json' };
 import { createNodeAdapter } from '@kjanat/dreamcli/runtime';
-import pkg from 'claude-down/package.json' with { type: 'json' };
 import process, { argv, stdout } from 'node:process';
 
 if (import.meta.main) {
@@ -16,7 +16,9 @@ if (import.meta.main) {
 		adapter: {
 			...adapter,
 			exit: (code) => {
-				if (showFooter) adapter.stdout(helpFooter(pkg.homepage));
+				if (showFooter) {
+					adapter.stdout(helpFooter(pkg.homepage, adapter.isTTY));
+				}
 				// A successful command resolves to exit code 0 in dreamcli; honor any
 				// status-derived process.exitCode the action set instead of forcing 0.
 				return adapter.exit(code !== 0 ? code : Number(process.exitCode ?? 0));

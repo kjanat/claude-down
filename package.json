@@ -19,6 +19,7 @@
 		"#claude-down/cli": "./src/cli/index.ts",
 		"#claude-down/browser": "./src/browser.ts",
 		"#claude-down/*": "./src/*.ts",
+		"#pkg": "./package.json",
 		"#test/*": "./test/*"
 	},
 	"exports": {

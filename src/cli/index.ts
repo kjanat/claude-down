@@ -1,5 +1,5 @@
+import pkg from '#pkg' with { type: 'json' };
 import { cli } from '@kjanat/dreamcli';
-import pkg from 'claude-down/package.json' with { type: 'json' };
 
 import {
 	anthropicCommand,

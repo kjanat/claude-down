@@ -1,5 +1,6 @@
 import { anthropicCommand, statusCommand } from '#claude-down/cli/commands';
 import { claudeDown } from '#claude-down/cli/index';
+import pkg from '#pkg' with { type: 'json' };
 import {
 	anthropicStatusBaseEnvVar,
 	withSummaryFixture,
@@ -8,7 +9,6 @@ import { ExitError } from '@kjanat/dreamcli/runtime';
 import { createTestAdapter, runCommand } from '@kjanat/dreamcli/testkit';
 import { serve } from 'bun';
 import { describe, expect, test } from 'bun:test';
-import pkg from 'claude-down/package.json' with { type: 'json' };
 
 function downOutputRow() {
 	return [
