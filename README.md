@@ -12,6 +12,12 @@
 2. **Downdetector**: Community-driven signal that often leads official reports
    by several minutes.
 
+Claude Fable 5 access is suspended right now — check if it's back:
+
+```bash
+npx -y claude-down@latest --fable
+```
+
 ## Installation
 
 You can run it directly using `bunx` or `npx`:
