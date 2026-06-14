@@ -132,4 +132,13 @@ function renderStatusRows(rows: readonly StatusRow[], out: Out): void {
 	out.log(rows.map((row) => formatRow(row, out.isTTY)).join('\n\n'));
 }
 
-export { renderStatusRows, toOutputRows };
+/**
+ * Renders a single styled status row, used by the interactive path to print
+ * each source the moment it resolves. Only invoked in TTY, non-JSON mode, so
+ * styling always tracks {@linkcode Out.isTTY}.
+ */
+function renderStatusRow(row: StatusRow, out: Out): void {
+	out.log(formatRow(row, out.isTTY));
+}
+
+export { renderStatusRow, renderStatusRows, toOutputRows };

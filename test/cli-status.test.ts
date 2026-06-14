@@ -215,6 +215,66 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 		});
 	});
 
+	test('streams a spinner and the row in interactive (TTY) mode', async () => {
+		await withSummaryFixture('anthropic-up.json', async (server) => {
+			const result = await runCommand(
+				statusCommand,
+				['--source', 'anthropic'],
+				{
+					env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+					isTTY: true,
+				},
+			);
+
+			expect(result.exitCode).toBe(0);
+			expect(result.stderr).toEqual([]);
+			// The result row streams to stdout as styled human output.
+			expect(result.stdout).toEqual([
+				`${ANTHROPIC_LINK_OPEN}${BOLD_GREEN}Anthropic${RESET}${LINK_CLOSE}\n  ${GREEN}All Systems Operational${RESET}\n`,
+			]);
+			// A spinner brackets the check: started naming the source, stopped
+			// once the row is ready to print.
+			expect(result.activity).toEqual([
+				{ type: 'spinner:start', text: 'Checking Anthropic…' },
+				{ type: 'spinner:stop' },
+			]);
+		});
+	});
+
+	test('does not spin or stream when stdout is not a tty', async () => {
+		await withSummaryFixture('anthropic-up.json', async (server) => {
+			const result = await runCommand(
+				statusCommand,
+				['--source', 'anthropic'],
+				{
+					env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+				},
+			);
+
+			expect(result.exitCode).toBe(0);
+			// Non-TTY stays machine-bound: a single JSON array, no spinner.
+			expect(result.activity).toEqual([]);
+			expect(JSON.parse(result.stdout[0] ?? 'null')).toEqual(upOutputRow());
+		});
+	});
+
+	test('quiet mode suppresses the spinner even in a tty', async () => {
+		await withSummaryFixture('anthropic-up.json', async (server) => {
+			const result = await runCommand(statusCommand, [
+				'--source',
+				'anthropic',
+				'--quiet',
+			], {
+				env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+				isTTY: true,
+			});
+
+			expect(result.exitCode).toBe(0);
+			expect(result.activity).toEqual([]);
+			expect(result.stdout).toEqual([]);
+		});
+	});
+
 	test('status command emits unavailable JSON when source is unreachable', async () => {
 		await withClosedPort(async (baseUrl) => {
 			const result = await runCommand(
