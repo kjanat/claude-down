@@ -152,15 +152,23 @@ function filterAnthropicByModels(
 		)
 			?? [];
 
-	const label = [...selected].join(', ');
 	const matchCount = incidents.length + affectedComponents.length;
+	// Only name the models that actually appear in a matched incident/component
+	// — not every queried model — so `--fable --opus` reports just Fable when
+	// Opus is unaffected.
+	const affectedModels = [...selected].filter((model) =>
+		incidents.some((incident) => incident.name.toLowerCase().includes(model))
+		|| affectedComponents.some((component) =>
+			component.name.toLowerCase().includes(model)
+		)
+	);
 
 	return {
 		source: 'anthropic',
 		indicator: matchCount > 0 ? 'major' : 'none',
 		summaryText: matchCount > 0
-			? `${matchCount} report(s) affecting ${label}`
-			: `No incidents reported for ${label}`,
+			? `${matchCount} report(s) affecting ${affectedModels.join(', ')}`
+			: `No incidents reported for ${[...selected].join(', ')}`,
 		incidents: incidents.length > 0 ? incidents : null,
 		affectedComponents: affectedComponents.length > 0
 			? affectedComponents

@@ -76,6 +76,16 @@ describe(filterAnthropicByModels.name, () => {
 		expect(filtered.summaryText).toContain('opus');
 	});
 
+	test('names only affected models, omitting queried-but-unaffected ones', () => {
+		const filtered = filterAnthropicByModels(
+			anthropicRow(),
+			new Set<Model>(['opus', 'fable']),
+		);
+		expect(filtered.indicator).toBe('major');
+		expect(filtered.summaryText).toContain('opus');
+		expect(filtered.summaryText).not.toContain('fable');
+	});
+
 	test('matches model names appearing only in components', () => {
 		const filtered = filterAnthropicByModels(
 			anthropicRow(),
