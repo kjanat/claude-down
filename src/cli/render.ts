@@ -7,6 +7,7 @@ import {
 	DOWNDETECTOR_URL,
 } from '#claude-down/lib/constants';
 import type { IncidentImpactValue } from '#claude-down/lib/types';
+import pkg from '#pkg' with { type: 'json' };
 
 const ANSI_RESET = '\x1b[0m';
 const ANSI_BOLD = '\x1b[1m';
@@ -132,4 +133,25 @@ function renderStatusRows(rows: readonly StatusRow[], out: Out): void {
 	out.log(rows.map((row) => formatRow(row, out.isTTY)).join('\n\n'));
 }
 
-export { renderStatusRows, toOutputRows };
+/**
+ * Renders a single styled status row, used by the interactive path to print
+ * each source the moment it resolves. Only invoked in TTY, non-JSON mode, so
+ * styling always tracks {@linkcode Out.isTTY}.
+ */
+function renderStatusRow(row: StatusRow, out: Out): void {
+	out.log(formatRow(row, out.isTTY));
+}
+
+/**
+ * Trailing pointer to the auto-polling web page, printed under human status
+ * output. Dimmed and OSC 8-linked so it stays unobtrusive yet clickable, and
+ * suppressed in JSON/non-TTY so machine-readable output is left untouched.
+ */
+function renderPageFooter(out: Out): void {
+	if (out.jsonMode || !out.isTTY) return;
+
+	const link = hyperlink(pkg.homepage, pkg.homepage, true);
+	out.log(`\n${paint(`Watch the live status page: ${link}`, ANSI_DIM, true)}`);
+}
+
+export { renderPageFooter, renderStatusRow, renderStatusRows, toOutputRows };

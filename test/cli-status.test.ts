@@ -1,5 +1,6 @@
 import { anthropicCommand, statusCommand } from '#claude-down/cli/commands';
 import { claudeDown } from '#claude-down/cli/index';
+import pkg from '#pkg' with { type: 'json' };
 import {
 	anthropicStatusBaseEnvVar,
 	withSummaryFixture,
@@ -8,7 +9,6 @@ import { ExitError } from '@kjanat/dreamcli/runtime';
 import { createTestAdapter, runCommand } from '@kjanat/dreamcli/testkit';
 import { serve } from 'bun';
 import { describe, expect, test } from 'bun:test';
-import pkg from 'claude-down/package.json' with { type: 'json' };
 
 function downOutputRow() {
 	return [
@@ -51,6 +51,10 @@ const BOLD_DIM = '\x1b[1m\x1b[2m';
 const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const DIM = '\x1b[2m';
+
+// Trailing pointer to the web page, appended under human (TTY) status output.
+const PAGE_FOOTER =
+	`\n${DIM}Watch the live status page: \x1b]8;;${pkg.homepage}\x1b\\${pkg.homepage}\x1b]8;;\x1b\\${RESET}\n`;
 
 async function withClosedPort<T>(
 	run: (baseUrl: string) => Promise<T>,
@@ -142,6 +146,7 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
     - Claude Code
     - Claude Cowork
 `,
+				PAGE_FOOTER,
 			]);
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
@@ -158,6 +163,7 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 			expect(result.stderr).toEqual([]);
 			expect(result.stdout).toEqual([
 				`${ANTHROPIC_LINK_OPEN}${BOLD_GREEN}Anthropic${RESET}${LINK_CLOSE}\n  ${GREEN}All Systems Operational${RESET}\n`,
+				PAGE_FOOTER,
 			]);
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
@@ -204,14 +210,80 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 
 			expect(result.exitCode).toBe(0);
 			expect(result.stderr).toEqual([]);
-			expect(result.stdout).toHaveLength(1);
-			const [body] = result.stdout;
+			expect(result.stdout).toHaveLength(2);
+			const [body, footer] = result.stdout;
 			expect(body).toContain(
 				`${ANTHROPIC_LINK_OPEN}${BOLD_DIM}Anthropic${RESET}${LINK_CLOSE}`,
 			);
 			expect(body).toMatch(
 				new RegExp(`^.+\\n  ${DIM.replace(/\[/g, '\\[')}Unavailable: `),
 			);
+			expect(footer).toBe(PAGE_FOOTER);
+		});
+	});
+
+	test('streams a spinner and the row in interactive (TTY) mode', async () => {
+		await withSummaryFixture('anthropic-up.json', async (server) => {
+			const result = await runCommand(
+				statusCommand,
+				['--source', 'anthropic'],
+				{
+					env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+					isTTY: true,
+				},
+			);
+
+			expect(result.exitCode).toBe(0);
+			expect(result.stderr).toEqual([]);
+			// The result row streams to stdout as styled human output, with a
+			// trailing pointer to the web page.
+			expect(result.stdout).toEqual([
+				`${ANTHROPIC_LINK_OPEN}${BOLD_GREEN}Anthropic${RESET}${LINK_CLOSE}\n  ${GREEN}All Systems Operational${RESET}\n`,
+				PAGE_FOOTER,
+			]);
+			// A spinner brackets the check: started naming the source, stopped
+			// once the row is ready to print.
+			expect(result.activity).toEqual([
+				{ type: 'spinner:start', text: 'Checking Anthropic…' },
+				{ type: 'spinner:stop' },
+			]);
+		});
+	});
+
+	test('does not spin or stream when stdout is not a tty', async () => {
+		await withSummaryFixture('anthropic-up.json', async (server) => {
+			const result = await runCommand(
+				statusCommand,
+				['--source', 'anthropic'],
+				{
+					env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+				},
+			);
+
+			expect(result.exitCode).toBe(0);
+			// Non-TTY stays machine-bound: a single JSON array, no spinner, no
+			// human page-footer leaking into stdout.
+			expect(result.activity).toEqual([]);
+			expect(result.stdout).toHaveLength(1);
+			expect(result.stdout.join('')).not.toContain(pkg.homepage);
+			expect(JSON.parse(result.stdout[0] ?? 'null')).toEqual(upOutputRow());
+		});
+	});
+
+	test('quiet mode suppresses the spinner even in a tty', async () => {
+		await withSummaryFixture('anthropic-up.json', async (server) => {
+			const result = await runCommand(statusCommand, [
+				'--source',
+				'anthropic',
+				'--quiet',
+			], {
+				env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+				isTTY: true,
+			});
+
+			expect(result.exitCode).toBe(0);
+			expect(result.activity).toEqual([]);
+			expect(result.stdout).toEqual([]);
 		});
 	});
 
