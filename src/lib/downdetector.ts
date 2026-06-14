@@ -1,12 +1,12 @@
-import { DOWNDETECTOR_URL } from '#claude-down/lib/constants.ts';
-import { openCdpTarget } from '#claude-down/lib/downdetector/cdp.ts';
+import { DOWNDETECTOR_URL } from '#claude-down/lib/constants';
+import { openCdpTarget } from '#claude-down/lib/downdetector/cdp';
 import {
 	cleanupBrowser,
 	findChrome,
 	launchBrowser,
-} from '#claude-down/lib/downdetector/chrome.ts';
-import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot.ts';
-import type { Signal } from '#claude-down/lib/types.ts';
+} from '#claude-down/lib/downdetector/chrome';
+import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot';
+import type { Signal } from '#claude-down/lib/types';
 
 /** Checks the status of Claude AI on Downdetector.
  *
@@ -16,13 +16,18 @@ import type { Signal } from '#claude-down/lib/types.ts';
  *
  * If an outage is detected, it extracts the reason from the page.
  *
+ * @param chromePath Optional explicit Chrome/Chromium binary to use.
  * @returns A promise of {@linkcode Signal}.
  * @see {@link https://downdetector.com/status/claude-ai/} for the target page.
  */
-async function check(): Promise<Signal> {
-	const chrome = findChrome();
+async function check(chromePath?: string): Promise<Signal> {
+	const chrome = findChrome(chromePath);
 	if (chrome === null) {
-		return { ok: false, error: 'no chromium/chrome binary found' };
+		return {
+			ok: false,
+			error:
+				'no Chrome/Chromium found; set CLAUDE_DOWN_CHROME or pass --chrome <path>',
+		};
 	}
 
 	const launched = await launchBrowser(chrome);

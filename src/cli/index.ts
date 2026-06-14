@@ -5,12 +5,15 @@ import {
 	anthropicCommand,
 	downdetectorCommand,
 	statusCommand,
-} from '#claude-down/cli/commands.ts';
+} from '#claude-down/cli/commands';
+
+const repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '');
 
 const claudeDown = cli(pkg.name)
 	.version(pkg.version)
 	.description(pkg.description)
-	.command(statusCommand)
+	.links({ name: repoUrl, version: `${repoUrl}/releases/tag/v${pkg.version}` })
+	.default(statusCommand)
 	.command(anthropicCommand)
 	.command(downdetectorCommand)
 	.completions();

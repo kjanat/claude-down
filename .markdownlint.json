@@ -1,4 +1,5 @@
 {
 	"$schema": "https://www.schemastore.org/markdownlint.json",
-	"no-inline-html": false
+	"no-inline-html": false,
+	"MD013": { "tables": false }
 }

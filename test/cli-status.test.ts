@@ -1,5 +1,5 @@
-import { anthropicCommand, statusCommand } from '#claude-down/cli/commands.ts';
-import { claudeDown } from '#claude-down/cli/index.ts';
+import { anthropicCommand, statusCommand } from '#claude-down/cli/commands';
+import { claudeDown } from '#claude-down/cli/index';
 import {
 	anthropicStatusBaseEnvVar,
 	withSummaryFixture,
@@ -107,7 +107,8 @@ describe('CLI status output', () => {
 		expect(result.exitCode).toBe(0);
 		expect(result.stderr).toEqual([]);
 		expect(output.startsWith(`claude-down v${pkg.version}\n`)).toBe(true);
-		expect(output).toContain('Usage: claude-down <command> [options]');
+		expect(output).toContain('Usage: claude-down [command] [options]');
+		expect(output).toContain('status (default)');
 		expect(output).not.toContain('actup');
 		expect(output).not.toContain('0.0.0+dev');
 	});

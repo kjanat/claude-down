@@ -1,66 +1,106 @@
 import { command, type Out } from '@kjanat/dreamcli';
-import { exit } from 'node:process';
+import process from 'node:process';
 
 import {
 	anthropicStatusBaseFlag,
+	chromeFlag,
+	modelConvenienceFlags,
+	modelFlag,
 	quietFlag,
+	selectedModels,
+	selectedSources,
 	sourceSelectionFlag,
-} from '#claude-down/cli/flags.ts';
-import { sourceLabels } from '#claude-down/cli/model.ts';
-import type { StatusRow } from '#claude-down/cli/model.ts';
-import { renderStatusRows } from '#claude-down/cli/render.ts';
+} from '#claude-down/cli/flags';
+import { type Model, sourceLabels } from '#claude-down/cli/model';
+import type { StatusRow } from '#claude-down/cli/model';
+import { renderStatusRows } from '#claude-down/cli/render';
 import {
 	checkAnthropicSource,
 	checkDowndetectorSource,
 	checkSources,
+	filterAnthropicByModels,
 	sortRows,
 	summarizeExitCode,
-} from '#claude-down/cli/status.ts';
+} from '#claude-down/cli/status';
 
 function finishStatus(
 	rows: readonly StatusRow[],
 	quiet: boolean,
 	out: Out,
 ): void {
-	if (quiet) {
-		const exitCode = summarizeExitCode(rows);
-		if (exitCode !== 0) exit(exitCode);
-		return;
+	if (!quiet) {
+		renderStatusRows(sortRows(rows), out);
 	}
 
-	renderStatusRows(sortRows(rows), out);
+	// Reflect status severity in the exit code regardless of --quiet. We set
+	// process.exitCode rather than calling exit() so the in-process testkit is
+	// not killed; main.ts applies it on a successful run, where dreamcli would
+	// otherwise force a 0 exit code.
+	process.exitCode = summarizeExitCode(rows);
+}
+
+function applyModelFilter(
+	rows: readonly StatusRow[],
+	selected: ReadonlySet<Model>,
+): readonly StatusRow[] {
+	if (selected.size === 0) return rows;
+	return rows.map((row) => filterAnthropicByModels(row, selected));
 }
 
 const statusCommand = command('status')
 	.description('Check Claude status across Anthropic and Downdetector')
 	.example('status', 'Check all sources')
 	.example('status --source anthropic', 'Check only Anthropic')
+	.example('status --opus', 'Only report incidents mentioning Opus')
 	.example('status --json', 'Emit machine-readable source rows')
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
+	.flag('chrome', chromeFlag)
 	.flag('quiet', quietFlag)
 	.flag('source', sourceSelectionFlag)
+	.flag('model', modelFlag)
+	.flag('opus', modelConvenienceFlags.opus)
+	.flag('haiku', modelConvenienceFlags.haiku)
+	.flag('sonnet', modelConvenienceFlags.sonnet)
+	.flag('mythos', modelConvenienceFlags.mythos)
+	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
-		const { source, anthropicStatusBase, quiet } = flags;
-		const rows = await checkSources(source, anthropicStatusBase);
-		finishStatus(rows, quiet, out);
+		const { source, anthropicStatusBase, chrome, quiet } = flags;
+		const rows = await checkSources(
+			selectedSources(source),
+			anthropicStatusBase,
+			chrome,
+		);
+		finishStatus(applyModelFilter(rows, selectedModels(flags)), quiet, out);
 	});
 
 const anthropicCommand = command('anthropic')
 	.description(`Check only ${sourceLabels.anthropic}`)
 	.example('anthropic', `Check only ${sourceLabels.anthropic}`)
+	.example('anthropic --model opus', 'Only report incidents mentioning Opus')
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('quiet', quietFlag)
+	.flag('model', modelFlag)
+	.flag('opus', modelConvenienceFlags.opus)
+	.flag('haiku', modelConvenienceFlags.haiku)
+	.flag('sonnet', modelConvenienceFlags.sonnet)
+	.flag('mythos', modelConvenienceFlags.mythos)
+	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
 		const row = await checkAnthropicSource(flags.anthropicStatusBase);
-		finishStatus([row], flags.quiet, out);
+		finishStatus(
+			applyModelFilter([row], selectedModels(flags)),
+			flags.quiet,
+			out,
+		);
 	});
 
 const downdetectorCommand = command('downdetector')
 	.description(`Check only ${sourceLabels.downdetector}`)
 	.example('downdetector', `Check only ${sourceLabels.downdetector}`)
+	.flag('chrome', chromeFlag)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const row = await checkDowndetectorSource();
+		const row = await checkDowndetectorSource(flags.chrome);
 		finishStatus([row], flags.quiet, out);
 	});
 

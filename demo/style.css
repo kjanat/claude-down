@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/nursery/noExcessiveLinesPerFile: shut up */
+/** biome-ignore-all lint/style/noExcessiveLinesPerFile: shut up */
 @import url("https://cdn.jsdelivr.net/npm/tailwindcss@4/preflight.min.css");
 
 :root {

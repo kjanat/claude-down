@@ -1,4 +1,4 @@
-import { checkAnthropic } from '#claude-down/lib/anthropic.ts';
+import { checkAnthropic } from '#claude-down/lib/anthropic';
 
 export default { checkAnthropic };
 export { checkAnthropic };
@@ -8,6 +8,6 @@ export type {
 	IncidentImpactValue,
 	IncidentStatusValue,
 	Result,
-} from '#claude-down/lib/types.ts';
+} from '#claude-down/lib/types';
 
 export type { Component, Incident, Summary } from 'statuspage.io';

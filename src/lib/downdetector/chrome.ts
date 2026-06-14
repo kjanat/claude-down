@@ -1,10 +1,17 @@
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, win32 } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { BROWSER_CANDIDATES } from '#claude-down/lib/constants.ts';
+import {
+	BROWSER_CANDIDATES,
+	BROWSER_CANDIDATES_WIN,
+	CHROME_PATH_ENV,
+	MACOS_CHROME_PATHS,
+	WINDOWS_CHROME_ROOT_ENV_VARS,
+	WINDOWS_CHROME_SUFFIX_SEGMENTS,
+} from '#claude-down/lib/constants';
 
 /** Represents a launched headless browser instance. */
 type LaunchedBrowser = {
@@ -21,16 +28,68 @@ type LaunchBrowserResult =
 	| { ok: true; browser: LaunchedBrowser }
 	| { ok: false; error: string };
 
-/** Attempts to find the path to a Chrome or Chromium executable by checking common candidates. */
-function findChrome(): string | null {
-	for (const name of BROWSER_CANDIDATES) {
-		const result = spawnSync('which', [name]);
+/** Resolves an executable name against `$PATH` using the platform's lookup tool. */
+function lookupOnPath(tool: string, names: readonly string[]): string | null {
+	for (const name of names) {
+		const result = spawnSync(tool, [name]);
 		if (result.status === 0 && result.stdout) {
-			return result.stdout.toString().trim();
+			// `where.exe` may return several lines; the first hit wins.
+			const first = result.stdout.toString().split(/\r?\n/)[0]?.trim();
+			if (first) return first;
 		}
 	}
 
 	return null;
+}
+
+/** Returns the first path in `candidates` that exists on disk, or null. */
+function firstExisting(candidates: readonly string[]): string | null {
+	for (const candidate of candidates) {
+		if (candidate && existsSync(candidate)) return candidate;
+	}
+
+	return null;
+}
+
+/** Builds the default Windows install paths from the program-files style env roots. */
+function windowsInstallPaths(): string[] {
+	const paths: string[] = [];
+	for (const rootVar of WINDOWS_CHROME_ROOT_ENV_VARS) {
+		const root = process.env[rootVar];
+		if (!root) continue;
+		for (const segments of WINDOWS_CHROME_SUFFIX_SEGMENTS) {
+			paths.push(win32.join(root, ...segments));
+		}
+	}
+
+	return paths;
+}
+
+/**
+ * Locates a Chromium-family executable.
+ *
+ * Resolution order: explicit `chromePath` argument, then the
+ * {@link CHROME_PATH_ENV} environment variable, then platform discovery
+ * (`where.exe` + default install dirs on Windows, `which` + app bundles on
+ * macOS, `which` elsewhere).
+ */
+function findChrome(chromePath?: string): string | null {
+	const override = chromePath ?? process.env[CHROME_PATH_ENV];
+	if (override) {
+		return existsSync(override) ? override : null;
+	}
+
+	if (process.platform === 'win32') {
+		return lookupOnPath('where.exe', BROWSER_CANDIDATES_WIN)
+			?? firstExisting(windowsInstallPaths());
+	}
+
+	if (process.platform === 'darwin') {
+		return lookupOnPath('which', BROWSER_CANDIDATES)
+			?? firstExisting(MACOS_CHROME_PATHS);
+	}
+
+	return lookupOnPath('which', BROWSER_CANDIDATES);
 }
 
 /** Waits for the Chrome DevTools Protocol (CDP) endpoint to become available at the specified base URL within a given timeout.
@@ -101,13 +160,27 @@ async function launchBrowser(chrome: string): Promise<LaunchBrowserResult> {
  * @param userDataDir - The path to the temporary user data directory to remove.
  */
 function cleanupBrowser(proc: ChildProcess, userDataDir: string): void {
-	proc.kill();
-	rmSync(userDataDir, {
-		recursive: true,
-		force: true,
-		maxRetries: 5,
-		retryDelay: 100,
-	});
+	// `proc.kill()` only signals the parent. On Windows, Chrome's child
+	// processes keep handles on the user-data-dir, so we kill the whole tree
+	// (taskkill /t) to release the locks before removing the directory.
+	if (process.platform === 'win32' && proc.pid !== undefined) {
+		spawnSync('taskkill', ['/pid', String(proc.pid), '/t', '/f']);
+	} else {
+		proc.kill();
+	}
+
+	try {
+		rmSync(userDataDir, {
+			recursive: true,
+			force: true,
+			maxRetries: 5,
+			retryDelay: 100,
+		});
+	} catch {
+		// Best-effort: a lingering Windows lock can keep the temp dir around.
+		// It lives under the OS temp dir and gets reaped later; a failed
+		// cleanup must never mask or replace the actual status result.
+	}
 }
 
 export { cleanupBrowser, findChrome, launchBrowser };
