@@ -82,7 +82,7 @@ function createCdpConnection(ws: WebSocket): CdpSend {
 /** Opens a new CDP target for the specified URL and returns an interface for sending CDP commands.
  *
  * @param base - The base URL of the CDP endpoint, e.g. `'http://localhost:9222'`.
- * @param url - The URL to open in the new CDP target, e.g. `'https://www.example.com'`.
+ * @param url - The URL to navigate the new CDP target to.
  * @returns A promise that resolves to an object containing a send function for
  * CDP commands and a close function, or an error message if the target could
  * not be opened.
@@ -94,7 +94,7 @@ async function openCdpTarget(
 	{ ok: true; send: CdpSend; close: () => void } | { ok: false; error: string }
 > {
 	const targetResponse = await fetch(
-		`${base}/json/new?${encodeURIComponent(url)}`,
+		`${base}/json/new?${encodeURIComponent('about:blank')}`,
 		{ method: 'PUT' },
 	);
 	const targetJson: unknown = await targetResponse.json();
@@ -109,7 +109,11 @@ async function openCdpTarget(
 		ws.onclose = () => reject(new Error('WebSocket closed before opening'));
 	});
 
-	return { ok: true, send: createCdpConnection(ws), close: () => ws.close() };
+	const send = createCdpConnection(ws);
+	await send('Page.enable');
+	await send('Page.navigate', { url });
+
+	return { ok: true, send, close: () => ws.close() };
 }
 
 export { openCdpTarget };

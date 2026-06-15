@@ -9,7 +9,24 @@ type PogoSnapshot = {
 	pogo: { outage?: boolean } | null;
 	/** The text content of the first <h1> element on the page, or null if it doesn't exist. */
 	h1: string | null;
+	/** Whether the current page is Cloudflare's managed challenge. */
+	cfChallenge?: boolean;
 };
+
+type PogoSnapshotResult =
+	| { kind: 'status'; pogo: { outage?: boolean }; heading: string | null }
+	| { kind: 'cloudflare-challenge' };
+
+type PageEvaluate = (expression: string) => Promise<unknown>;
+
+const POGO_SNAPSHOT_EXPRESSION = `({
+	title: document.title,
+	pogo: window.PogoConfig ?? null,
+	h1: document.querySelector('h1')?.innerText ?? null,
+	cfChallenge: document.title === 'Just a moment...'
+		|| document.querySelector('script[src*="/cdn-cgi/challenge-platform/"]') !== null
+		|| document.body?.innerText?.includes('Enable JavaScript and cookies to continue') === true,
+})`;
 
 /** Represents the structure of the result returned from evaluating a CDP expression. */
 type CdpEvalResult = {
@@ -47,6 +64,13 @@ function isPogoSnapshot(value: unknown): value is PogoSnapshot {
 	if ('h1' in value && value.h1 !== null && typeof value.h1 !== 'string') {
 		return false;
 	}
+	if (
+		'cfChallenge' in value
+		&& value.cfChallenge !== undefined
+		&& typeof value.cfChallenge !== 'boolean'
+	) {
+		return false;
+	}
 	if (!('pogo' in value)) return false;
 	const { pogo } = value;
 
@@ -71,35 +95,41 @@ function isPogoSnapshot(value: unknown): value is PogoSnapshot {
 async function pollPogoSnapshot(
 	send: CdpSend,
 	timeoutMs: number,
-): Promise<{ pogo: { outage?: boolean }; heading: string | null } | null> {
+): Promise<PogoSnapshotResult | null> {
 	await send('Runtime.enable');
 
-	const deadline = Date.now() + timeoutMs;
-	while (Date.now() < deadline) {
+	return pollPogoSnapshotFromEvaluate(async (expression) => {
 		const response = await send('Runtime.evaluate', {
-			expression: `JSON.stringify({
-	title: document.title,
-	pogo: window.PogoConfig ?? null,
-	h1: document.querySelector('h1')?.innerText ?? null,
-})`,
+			expression: `JSON.stringify(${expression})`,
 			returnByValue: true,
 		});
 
-		if (isCdpEvalResult(response)) {
-			let snapshot: unknown;
-			try {
-				snapshot = JSON.parse(response.result.result.value);
-			} catch {
-				snapshot = null;
-			}
+		if (!isCdpEvalResult(response)) return null;
 
-			if (
-				isPogoSnapshot(snapshot)
-				&& snapshot.pogo !== null
-				&& snapshot.title !== 'Just a moment...'
-			) {
-				return { pogo: snapshot.pogo, heading: snapshot.h1 };
-			}
+		try {
+			return JSON.parse(response.result.result.value) as unknown;
+		} catch {
+			return null;
+		}
+	}, timeoutMs);
+}
+
+async function pollPogoSnapshotFromEvaluate(
+	evaluate: PageEvaluate,
+	timeoutMs: number,
+): Promise<PogoSnapshotResult | null> {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		const snapshot = await evaluate(POGO_SNAPSHOT_EXPRESSION);
+		if (isPogoSnapshot(snapshot) && snapshot.cfChallenge === true) {
+			return { kind: 'cloudflare-challenge' };
+		}
+
+		if (
+			isPogoSnapshot(snapshot)
+			&& snapshot.pogo !== null
+		) {
+			return { kind: 'status', pogo: snapshot.pogo, heading: snapshot.h1 };
 		}
 
 		await setTimeout(700);
@@ -108,4 +138,4 @@ async function pollPogoSnapshot(
 	return null;
 }
 
-export { pollPogoSnapshot };
+export { pollPogoSnapshot, pollPogoSnapshotFromEvaluate };
