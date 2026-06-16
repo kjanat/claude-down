@@ -309,5 +309,10 @@ async function checkDownDetectorWithWebView(
 	return checkWithWebViewWorker(url, chromePath);
 }
 
-export { checkDownDetectorWithWebView, checkWithWebView, checkWithWebViewWorker, isBunRuntime };
+export {
+	checkDownDetectorWithWebView,
+	checkWithWebView,
+	checkWithWebViewWorker,
+	isBunRuntime,
+};
 export type { WebView, WebViewConstructor };

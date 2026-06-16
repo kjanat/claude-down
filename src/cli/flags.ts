@@ -68,12 +68,12 @@ const anthropicStatusBaseFlag = flag
 	.env('CLAUDE_DOWN_ANTHROPIC_STATUS_BASE')
 	.describe('Override Anthropic status page base URL');
 
-/** Selects which data sources to query; defaults to all available sources.
+/** Selects which data sources to query; defaults to Anthropic's first-party status.
  * Accepts comma-separated values and/or repeated flags. */
 const sourceSelectionFlag = flag
 	.array(flag.custom(parseSourceList))
 	.alias('s')
-	.default([[...sources]])
+	.default([['anthropic']])
 	.env('CLAUDE_DOWN_SOURCE')
 	.env('CLAUDE_DOWN_SOURCES') // plural form for convenience
 	.describe('Data source(s) to check');

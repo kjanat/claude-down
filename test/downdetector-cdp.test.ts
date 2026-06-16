@@ -65,7 +65,9 @@ describe(openCdpTarget.name, () => {
 
 		expect(requests).toEqual([{
 			method: 'PUT',
-			url: `http://127.0.0.1:9222/json/new?${encodeURIComponent('about:blank')}`,
+			url: `http://127.0.0.1:9222/json/new?${
+				encodeURIComponent('about:blank')
+			}`,
 		}]);
 		expect(sentMessages.map(({ method, params }) => ({ method, params })))
 			.toEqual([

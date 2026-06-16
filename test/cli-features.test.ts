@@ -100,6 +100,10 @@ describe(parseSourceList.name, () => {
 });
 
 describe(selectedSources.name, () => {
+	test('defaults to Anthropic only', () => {
+		expect(selectedSources([['anthropic']])).toEqual(['anthropic']);
+	});
+
 	test('flattens per-occurrence lists', () => {
 		const lists: readonly (readonly Source[])[] = [
 			['anthropic'],

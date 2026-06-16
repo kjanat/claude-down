@@ -1,8 +1,15 @@
 import { DOWNDETECTOR_URL } from '#claude-down/lib/constants';
 import { openCdpTarget } from '#claude-down/lib/downdetector/cdp';
-import { cleanupBrowser, findChrome, launchBrowser } from '#claude-down/lib/downdetector/chrome';
+import {
+	cleanupBrowser,
+	findChrome,
+	launchBrowser,
+} from '#claude-down/lib/downdetector/chrome';
 import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot';
-import { checkDownDetectorWithWebView, isBunRuntime } from '#claude-down/lib/downdetector/webview';
+import {
+	checkDownDetectorWithWebView,
+	isBunRuntime,
+} from '#claude-down/lib/downdetector/webview';
 import type { Signal } from '#claude-down/lib/types';
 
 /** Checks the status of Claude AI on Downdetector.
@@ -26,7 +33,8 @@ async function check(chromePath?: string): Promise<Signal> {
 	if (chrome === null) {
 		return {
 			ok: false,
-			error: 'no Chrome/Chromium found; set CLAUDE_DOWN_CHROME or pass --chrome <path>',
+			error:
+				'no Chrome/Chromium found; set CLAUDE_DOWN_CHROME or pass --chrome <path>',
 		};
 	}
 
