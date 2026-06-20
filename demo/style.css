@@ -256,6 +256,21 @@ header {
 	color: var(--color-muted);
 }
 
+.noscript-card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-caution);
+	border-radius: 12px;
+	color: var(--color-text-muted);
+	font-size: 14px;
+	margin-bottom: 24px;
+	padding: 16px 18px;
+}
+
+.noscript-card code {
+	color: var(--color-text-strong);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 /* Components grid */
 .components-grid {
 	display: grid;
@@ -413,6 +428,22 @@ header {
 	content: "Updated: ";
 }
 
+@media (prefers-reduced-motion: reduce) {
+	.hero,
+	.comp-card,
+	.footer-link,
+	.footer-link::before {
+		transition: none;
+	}
+
+	.footer-link:hover,
+	.footer-link:focus-visible,
+	.footer-link:hover::before,
+	.footer-link:focus-visible::before {
+		transform: none;
+	}
+}
+
 @media (max-width: 480px) {
 	body {
 		padding-bottom: 20px;
@@ -464,7 +495,8 @@ header {
 	}
 
 	.empty-row,
-	.loading-row {
+	.loading-row,
+	.noscript-card {
 		padding: 13px 16px;
 	}
 
