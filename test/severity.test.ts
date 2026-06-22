@@ -7,31 +7,43 @@ import {
 } from '#claude-down/lib/severity';
 
 describe(deriveConservativeIndicator.name, () => {
-	test('promotes a minor page indicator when an incident is major', () => {
-		expect(
-			deriveConservativeIndicator(
-				'minor',
-				[{ impact: 'major' }],
-				[],
-			),
-		).toBe('major');
-	});
-
 	test('promotes an operational page indicator when a component is out', () => {
 		expect(
 			deriveConservativeIndicator(
 				'none',
-				[],
 				[{ status: 'partial_outage' }],
 			),
 		).toBe('major');
+	});
+
+	test('promotes a minor page indicator when components are in partial outage', () => {
+		expect(
+			deriveConservativeIndicator(
+				'minor',
+				[{ status: 'partial_outage' }, { status: 'operational' }],
+			),
+		).toBe('major');
+	});
+
+	test('does not promote on incident impact alone when all components are operational', () => {
+		// A model suspension is labelled `major` but takes nothing offline:
+		// the headline must stay operational.
+		expect(
+			deriveConservativeIndicator(
+				'none',
+				[
+					{ status: 'operational' },
+					{ status: 'operational' },
+					{ status: 'operational' },
+				],
+			),
+		).toBe('none');
 	});
 
 	test('keeps the highest reported indicator', () => {
 		expect(
 			deriveConservativeIndicator(
 				'critical',
-				[{ impact: 'minor' }],
 				[{ status: 'operational' }],
 			),
 		).toBe('critical');

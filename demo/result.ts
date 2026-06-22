@@ -140,7 +140,6 @@ function normalizeSummary(result: unknown): StatusSummary {
 		: [];
 	const conservativeIndicator = deriveConservativeIndicator(
 		status.indicator,
-		incidents,
 		components,
 	);
 

@@ -44,19 +44,21 @@ function componentStatusImpact(status: unknown): IncidentImpactValue {
 	}
 }
 
+/**
+ * Promotes the page indicator to the worst *operational* state we can observe,
+ * derived solely from component health.
+ *
+ * Incident `impact` labels are deliberately excluded: they are editorial and
+ * outlive the disruption they describe (a model suspension stays `major` with
+ * nothing actually offline), so letting them drive the headline over-reports
+ * the outage. Components are the ground truth; incidents still surface in their
+ * own list with their own badges.
+ */
 function deriveConservativeIndicator(
 	reportedIndicator: unknown,
-	incidents: readonly { impact: unknown }[] = [],
 	components: readonly { status: unknown }[] = [],
 ): IncidentImpactValue {
 	let indicator = normalizeIncidentImpact(reportedIndicator);
-
-	for (const incident of incidents) {
-		indicator = higherImpact(
-			indicator,
-			normalizeIncidentImpact(incident.impact),
-		);
-	}
 
 	for (const component of components) {
 		indicator = higherImpact(

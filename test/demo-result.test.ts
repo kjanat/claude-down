@@ -46,7 +46,35 @@ describe(isFailureResult.name, () => {
 });
 
 describe(normalizeSummary.name, () => {
-	test('promotes the hero indicator from active incident impact', () => {
+	test('does not promote the hero indicator on incident impact alone', () => {
+		// A `major` incident that affects no component (e.g. a deliberate model
+		// suspension) must not drag the headline above the operational state.
+		const summary = normalizeSummary({
+			status: {
+				description: 'All Systems Operational',
+				indicator: 'none',
+			},
+			incidents: [{
+				created_at: '2026-06-13T00:00:00.000Z',
+				impact: 'major',
+				name: 'We’ve suspended access to Claude Mythos 5 and Claude Fable 5',
+				status: 'investigating',
+				updated_at: '2026-06-16T00:00:00.000Z',
+			}],
+			components: [
+				{ name: 'claude.ai', status: 'operational' },
+				{ name: 'Claude API', status: 'operational' },
+			],
+		});
+
+		expect(summary.status).toEqual({
+			description: 'All Systems Operational',
+			indicator: 'none',
+			reportedIndicator: 'none',
+		});
+	});
+
+	test('promotes the hero indicator from affected component state', () => {
 		const summary = normalizeSummary({
 			status: {
 				description: 'Minor Service Outage',
@@ -59,7 +87,7 @@ describe(normalizeSummary.name, () => {
 				status: 'investigating',
 				updated_at: '2026-06-22T00:00:00.000Z',
 			}],
-			components: [],
+			components: [{ name: 'Claude API', status: 'partial_outage' }],
 		});
 
 		expect(summary.status).toEqual({

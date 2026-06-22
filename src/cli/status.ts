@@ -40,7 +40,6 @@ async function checkAnthropicSource(
 	const reportedIndicator = result.summary.status.indicator;
 	const indicator = deriveConservativeIndicator(
 		reportedIndicator,
-		result.summary.incidents,
 		result.summary.components,
 	);
 	const summaryText = indicator === reportedIndicator
