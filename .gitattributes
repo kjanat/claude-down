@@ -2,4 +2,4 @@
 *.tsx text diff linguist-language=TSX
 
 bun.lock -diff
-demo/renderer.ts diff
+demo/renderer.ts diff linguist-detectable
