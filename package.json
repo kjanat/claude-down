@@ -1,6 +1,6 @@
 {
 	"name": "claude-down",
-	"version": "0.5.2",
+	"version": "0.5.3",
 	"description": "Is claude code down? Probably...",
 	"homepage": "https://kjanat.github.io/claude-down/",
 	"bugs": {
@@ -12,6 +12,14 @@
 	},
 	"license": "MIT",
 	"author": "Kaj Kowalski <info@kajkowalski.nl> (https://github.com/kjanat)",
+	"keywords": [
+		"anthropic",
+		"claude",
+		"cli",
+		"downdetector",
+		"dreamcli",
+		"statuspage"
+	],
 	"type": "module",
 	"jsdelivr": "./dist/browser/browser.js",
 	"imports": {
