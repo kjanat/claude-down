@@ -1,5 +1,4 @@
 import { command, type Out } from '@kjanat/dreamcli';
-import process from 'node:process';
 
 import {
 	anthropicStatusBaseFlag,
@@ -33,6 +32,16 @@ type SourceTask = Readonly<{
 	run: () => Promise<StatusRow>;
 }>;
 
+let latestStatusExitCode: number | undefined;
+
+function setStatusExitCode(code: number): void {
+	latestStatusExitCode = code;
+}
+
+function getStatusExitCode(): number | undefined {
+	return latestStatusExitCode;
+}
+
 /**
  * Drives a set of source checks and renders the result. In an interactive
  * terminal each row is streamed in as it resolves behind a spinner; otherwise
@@ -50,7 +59,7 @@ async function runStatus(
 	// quiet suppresses decoration entirely.
 	if (out.isTTY && !out.jsonMode && !quiet) {
 		const rows = await streamStatus(tasks, selected, out);
-		process.exitCode = summarizeExitCode(rows);
+		setStatusExitCode(summarizeExitCode(rows));
 		return;
 	}
 
@@ -88,6 +97,7 @@ async function streamStatus(
 	);
 
 	let spinner = out.spinner(checkingText(pending));
+	let renderedRows = 0;
 	try {
 		while (inFlight.size > 0) {
 			const settled = await Promise.race(
@@ -102,7 +112,8 @@ async function streamStatus(
 			collected.push(row);
 
 			spinner.stop();
-			renderStatusRow(row, out);
+			renderStatusRow(row, out, { leadingBlank: renderedRows > 0 });
+			renderedRows += 1;
 			if (pending.size > 0) {
 				spinner = out.spinner(checkingText(pending));
 			}
@@ -126,11 +137,10 @@ function finishStatus(
 		renderStatusRows(sortRows(rows), out);
 	}
 
-	// Reflect status severity in the exit code regardless of --quiet. We set
-	// process.exitCode rather than calling exit() so the in-process testkit is
-	// not killed; main.ts applies it on a successful run, where dreamcli would
-	// otherwise force a 0 exit code.
-	process.exitCode = summarizeExitCode(rows);
+	// Reflect status severity in the process exit code when main.ts exits the
+	// real CLI. The command action itself stays process-free so in-process tests
+	// can run outage cases without poisoning the host test runner.
+	setStatusExitCode(summarizeExitCode(rows));
 }
 
 function applyModelFilter(
@@ -199,4 +209,9 @@ const downdetectorCommand = command('downdetector')
 		await runStatus(tasks, new Set(), flags.quiet, out);
 	});
 
-export { anthropicCommand, downdetectorCommand, statusCommand };
+export {
+	anthropicCommand,
+	downdetectorCommand,
+	getStatusExitCode,
+	statusCommand,
+};

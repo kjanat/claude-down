@@ -23,6 +23,10 @@ const INDICATOR_COLORS: Record<IncidentImpactValue, string> = {
 	critical: ANSI_RED,
 };
 
+type RenderStatusRowOptions = Readonly<{
+	leadingBlank?: boolean;
+}>;
+
 function paint(text: string, codes: string, enabled: boolean): string {
 	return enabled ? `${codes}${text}${ANSI_RESET}` : text;
 }
@@ -138,8 +142,13 @@ function renderStatusRows(rows: readonly StatusRow[], out: Out): void {
  * each source the moment it resolves. Only invoked in TTY, non-JSON mode, so
  * styling always tracks {@linkcode Out.isTTY}.
  */
-function renderStatusRow(row: StatusRow, out: Out): void {
-	out.log(formatRow(row, out.isTTY));
+function renderStatusRow(
+	row: StatusRow,
+	out: Out,
+	options: RenderStatusRowOptions = {},
+): void {
+	const prefix = options.leadingBlank === true ? '\n' : '';
+	out.log(`${prefix}${formatRow(row, out.isTTY)}`);
 }
 
 /**

@@ -3,30 +3,8 @@ import type { Source, StatusRow } from '#claude-down/cli/model';
 import { checkAnthropic } from '#claude-down/lib/anthropic';
 import { EXIT_CODES } from '#claude-down/lib/constants';
 import { checkDownDetector } from '#claude-down/lib/downdetector';
-import type {
-	ComponentStatus,
-	IncidentImpactValue,
-} from '#claude-down/lib/types';
-
-import { IncidentImpact } from 'statuspage.io';
-
-/** A set of all possible incident impact indicators emitted by `statuspage.io`. */
-const INCIDENT_IMPACT_INDICATORS = new Set<string>(
-	Object.values(IncidentImpact),
-);
-
-function isAvailableIndicator(value: string): value is IncidentImpactValue {
-	return INCIDENT_IMPACT_INDICATORS.has(value);
-}
-/** Normalizes a string value to a valid {@linkcode IncidentImpactValue}.
- *
- * @param value - The string value to normalize.
- * @default `'critical'` if the value is unrecognized.
- * @returns The normalized IncidentImpactValue value, or `'critical'` if the input is unrecognized.
- */
-function normalizeIndicator(value: string): IncidentImpactValue {
-	return isAvailableIndicator(value) ? value : IncidentImpact.Critical;
-}
+import { deriveConservativeIndicator } from '#claude-down/lib/severity';
+import type { ComponentStatus } from '#claude-down/lib/types';
 
 function normalizeComponentStatus(value: string): ComponentStatus {
 	if (
@@ -56,7 +34,11 @@ async function checkAnthropicSource(
 		};
 	}
 
-	const indicator = normalizeIndicator(result.summary.status.indicator);
+	const indicator = deriveConservativeIndicator(
+		result.summary.status.indicator,
+		result.summary.incidents,
+		result.summary.components,
+	);
 	const affectedComponents = result.summary.components.filter(
 		(component) => component.status !== 'operational',
 	);

@@ -1,10 +1,15 @@
 import type { Component, Incident } from '#claude-down/browser';
+import {
+	deriveConservativeIndicator,
+	describeIndicator,
+} from '#claude-down/lib/severity';
 
 import { getString, isRecord } from './util.ts';
 
 interface HeroStatus {
 	description: string;
 	indicator: string;
+	reportedIndicator?: string;
 }
 
 interface StatusSummary {
@@ -104,14 +109,29 @@ function normalizeSummary(result: unknown): StatusSummary {
 		throw new Error('Invalid status response');
 	}
 
+	const status = normalizeHeroStatus(payload.status);
+	const incidents = Array.isArray(payload.incidents)
+		? payload.incidents as Incident[]
+		: [];
+	const components = Array.isArray(payload.components)
+		? payload.components as Component[]
+		: [];
+	const conservativeIndicator = deriveConservativeIndicator(
+		status.indicator,
+		incidents,
+		components,
+	);
+
 	return {
-		status: normalizeHeroStatus(payload.status),
-		incidents: Array.isArray(payload.incidents)
-			? payload.incidents as Incident[]
-			: [],
-		components: Array.isArray(payload.components)
-			? payload.components as Component[]
-			: [],
+		status: {
+			description: conservativeIndicator === status.indicator
+				? status.description
+				: describeIndicator(conservativeIndicator),
+			indicator: conservativeIndicator,
+			reportedIndicator: status.indicator,
+		},
+		incidents,
+		components,
 	};
 }
 

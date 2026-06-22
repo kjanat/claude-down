@@ -1,5 +1,6 @@
 import { anthropicCommand, statusCommand } from '#claude-down/cli/commands';
 import { claudeDown } from '#claude-down/cli/index';
+import { renderStatusRow } from '#claude-down/cli/render';
 import pkg from '#pkg' with { type: 'json' };
 import {
 	anthropicStatusBaseEnvVar,
@@ -104,6 +105,30 @@ async function runRootCli(argv: readonly string[]) {
 }
 
 describe('CLI status output', () => {
+	test('can render a streamed row with a leading blank line', () => {
+		const stdout: string[] = [];
+		const out = {
+			isTTY: false,
+			jsonMode: false,
+			log: (line: string) => stdout.push(line),
+		} as unknown as Parameters<typeof renderStatusRow>[1];
+
+		renderStatusRow(
+			{
+				source: 'downdetector',
+				indicator: 'major',
+				summaryText: 'User reports show problems with Claude AI',
+				reportsOutage: true,
+			},
+			out,
+			{ leadingBlank: true },
+		);
+
+		expect(stdout).toEqual([
+			'\nDowndetector\n  User reports show problems with Claude AI',
+		]);
+	});
+
 	test('root help ignores cwd package metadata', async () => {
 		const result = await runRootCli(['--help']);
 		const output = result.stdout[0] ?? '';
