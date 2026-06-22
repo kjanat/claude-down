@@ -39,7 +39,7 @@ function renderResult(result: unknown, lastUpdatedAt: Date): void {
 
 	const { status, incidents, components } = normalizeSummary(result);
 
-	renderHero(status);
+	renderHero(status, incidents.length);
 	renderIncidents(incidents);
 	renderComponents(components);
 }
