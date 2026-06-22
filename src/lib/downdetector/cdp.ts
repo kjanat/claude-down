@@ -56,7 +56,7 @@ function createCdpConnection(ws: WebSocket): CdpSend {
 		if (!isCdpMessage(parsed)) return;
 
 		const callback = pending.get(parsed.id);
-		if (callback === undefined) return;
+		if (typeof callback !== 'function') return;
 
 		pending.delete(parsed.id);
 		callback(parsed);

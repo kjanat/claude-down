@@ -57,6 +57,10 @@ const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const DIM = '\x1b[2m';
 
+/** Escapes every RegExp metacharacter so a literal string can be matched. */
+const escapeRegExp = (value: string): string =>
+	value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Trailing pointer to the web page, appended under human (TTY) status output.
 const PAGE_FOOTER =
 	`\n${DIM}Watch the live status page: \x1b]8;;${pkg.homepage}\x1b\\${pkg.homepage}\x1b]8;;\x1b\\${RESET}\n`;
@@ -264,7 +268,7 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 				`${ANTHROPIC_LINK_OPEN}${BOLD_DIM}Anthropic${RESET}${LINK_CLOSE}`,
 			);
 			expect(body).toMatch(
-				new RegExp(`^.+\\n  ${DIM.replace(/\[/g, '\\[')}Unavailable: `),
+				new RegExp(`^.+\\n  ${escapeRegExp(DIM)}Unavailable: `),
 			);
 			expect(footer).toBe(PAGE_FOOTER);
 		});
