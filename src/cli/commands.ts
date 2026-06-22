@@ -25,12 +25,16 @@ import {
 	sortRows,
 	summarizeExitCode,
 } from '#claude-down/cli/status';
+import { openUrlInDefaultBrowser } from '#claude-down/lib/open-url';
+import pkg from '#pkg' with { type: 'json' };
 
 /** A source paired with the deferred work that checks it. */
 type SourceTask = Readonly<{
 	source: Source;
 	run: () => Promise<StatusRow>;
 }>;
+
+type UrlOpener = (url: string) => Promise<void> | void;
 
 let latestStatusExitCode: number | undefined;
 
@@ -215,10 +219,25 @@ const downdetectorCommand = command('downdetector')
 		await runStatus(tasks, new Set(), flags.quiet, out);
 	});
 
+function createWebCommand(openUrl: UrlOpener = openUrlInDefaultBrowser) {
+	return command('web')
+		.alias('site')
+		.description('Open the live status page')
+		.example('web', 'Open the live status page in your browser')
+		.action(async ({ out }) => {
+			await openUrl(pkg.homepage);
+			out.log(`Opening ${pkg.homepage}`);
+		});
+}
+
+const webCommand = createWebCommand();
+
 export {
 	anthropicCommand,
+	createWebCommand,
 	downdetectorCommand,
 	getStatusExitCode,
 	resetStatusExitCode,
 	statusCommand,
+	webCommand,
 };

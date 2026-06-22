@@ -23,6 +23,14 @@ no install, no terminal. page poll itself, you stare:
 
 <https://kjanat.github.io/claude-down/>
 
+or pop it from the cli:
+
+```bash
+claude-down web
+# or
+claude-down site
+```
+
 ## get booga
 
 run direct, no install:

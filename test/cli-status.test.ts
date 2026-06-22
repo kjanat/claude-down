@@ -1,4 +1,8 @@
-import { anthropicCommand, statusCommand } from '#claude-down/cli/commands';
+import {
+	anthropicCommand,
+	createWebCommand,
+	statusCommand,
+} from '#claude-down/cli/commands';
 import { claudeDown } from '#claude-down/cli/index';
 import { renderStatusRow } from '#claude-down/cli/render';
 import pkg from '#pkg' with { type: 'json' };
@@ -138,6 +142,7 @@ describe('CLI status output', () => {
 		expect(output.startsWith(`claude-down v${pkg.version}\n`)).toBe(true);
 		expect(output).toContain('Usage: claude-down [command] [options]');
 		expect(output).toContain('status (default)');
+		expect(output).toContain('web');
 		expect(output).not.toContain('actup');
 		expect(output).not.toContain('0.0.0+dev');
 	});
@@ -148,6 +153,24 @@ describe('CLI status output', () => {
 		expect(result.exitCode).toBe(0);
 		expect(result.stderr).toEqual([]);
 		expect(result.stdout).toEqual([`${pkg.version}\n`]);
+	});
+
+	test('web command opens the live status page', async () => {
+		const opened: string[] = [];
+		const command = createWebCommand((url) => {
+			opened.push(url);
+		});
+
+		const result = await runCommand(command, []);
+
+		expect(result.exitCode).toBe(0);
+		expect(result.stderr).toEqual([]);
+		expect(result.stdout).toEqual([`Opening ${pkg.homepage}\n`]);
+		expect(opened).toEqual([pkg.homepage]);
+	});
+
+	test('web command exposes site alias', () => {
+		expect(createWebCommand().schema.aliases).toContain('site');
 	});
 
 	test('renders Anthropic down fixture as human output in TTY mode', async () => {
