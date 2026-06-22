@@ -1,10 +1,15 @@
 import type { Component, Incident } from '#claude-down/browser';
+import {
+	deriveConservativeIndicator,
+	describeIndicator,
+} from '#claude-down/lib/severity';
 
 import { getString, isRecord } from './util.ts';
 
 interface HeroStatus {
 	description: string;
 	indicator: string;
+	reportedIndicator?: string;
 }
 
 interface StatusSummary {
@@ -97,6 +102,28 @@ function normalizeHeroStatus(value: unknown): HeroStatus {
 	};
 }
 
+function hasStringProperty(
+	value: Record<string, unknown>,
+	key: string,
+): boolean {
+	return typeof value[key] === 'string';
+}
+
+function isIncident(value: unknown): value is Incident {
+	return isRecord(value)
+		&& hasStringProperty(value, 'name')
+		&& hasStringProperty(value, 'impact')
+		&& hasStringProperty(value, 'status')
+		&& hasStringProperty(value, 'created_at')
+		&& hasStringProperty(value, 'updated_at');
+}
+
+function isComponent(value: unknown): value is Component {
+	return isRecord(value)
+		&& hasStringProperty(value, 'name')
+		&& hasStringProperty(value, 'status');
+}
+
 function normalizeSummary(result: unknown): StatusSummary {
 	const payload = getPayload(result);
 
@@ -104,14 +131,29 @@ function normalizeSummary(result: unknown): StatusSummary {
 		throw new Error('Invalid status response');
 	}
 
+	const status = normalizeHeroStatus(payload.status);
+	const incidents = Array.isArray(payload.incidents)
+		? payload.incidents.filter(isIncident)
+		: [];
+	const components = Array.isArray(payload.components)
+		? payload.components.filter(isComponent)
+		: [];
+	const conservativeIndicator = deriveConservativeIndicator(
+		status.indicator,
+		incidents,
+		components,
+	);
+
 	return {
-		status: normalizeHeroStatus(payload.status),
-		incidents: Array.isArray(payload.incidents)
-			? payload.incidents as Incident[]
-			: [],
-		components: Array.isArray(payload.components)
-			? payload.components as Component[]
-			: [],
+		status: {
+			description: conservativeIndicator === status.indicator
+				? status.description
+				: describeIndicator(conservativeIndicator),
+			indicator: conservativeIndicator,
+			reportedIndicator: status.indicator,
+		},
+		incidents,
+		components,
 	};
 }
 

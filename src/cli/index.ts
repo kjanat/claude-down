@@ -5,6 +5,7 @@ import {
 	anthropicCommand,
 	downdetectorCommand,
 	statusCommand,
+	webCommand,
 } from '#claude-down/cli/commands';
 
 const repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '');
@@ -16,6 +17,7 @@ const claudeDown = cli(pkg.name)
 	.default(statusCommand)
 	.command(anthropicCommand)
 	.command(downdetectorCommand)
+	.command(webCommand)
 	.completions();
 
 export { claudeDown };

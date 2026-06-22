@@ -69,5 +69,23 @@ async function withSummaryFixture<T>(
 	}
 }
 
-export { anthropicStatusBaseEnvVar, cacheControlHeader, withSummaryFixture };
+async function withSummaryBody<T>(
+	summary: unknown,
+	run: (server: FixtureServer) => Promise<T>,
+): Promise<T> {
+	const server = await startSummaryFixtureServer(JSON.stringify(summary));
+
+	try {
+		return await run(server);
+	} finally {
+		server.stop();
+	}
+}
+
+export {
+	anthropicStatusBaseEnvVar,
+	cacheControlHeader,
+	withSummaryBody,
+	withSummaryFixture,
+};
 export type { FixtureServer, SummaryFixtureName };

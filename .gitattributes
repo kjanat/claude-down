@@ -1,1 +1,5 @@
+*.ts text diff linguist-language=TYPESCRIPT
+*.tsx text diff linguist-language=TSX
+
 bun.lock -diff
+demo/renderer.ts diff linguist-detectable

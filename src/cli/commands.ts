@@ -1,5 +1,4 @@
 import { command, type Out } from '@kjanat/dreamcli';
-import process from 'node:process';
 
 import {
 	anthropicStatusBaseFlag,
@@ -26,12 +25,30 @@ import {
 	sortRows,
 	summarizeExitCode,
 } from '#claude-down/cli/status';
+import { openUrlInDefaultBrowser } from '#claude-down/lib/open-url';
+import pkg from '#pkg' with { type: 'json' };
 
 /** A source paired with the deferred work that checks it. */
 type SourceTask = Readonly<{
 	source: Source;
 	run: () => Promise<StatusRow>;
 }>;
+
+type UrlOpener = (url: string) => Promise<void> | void;
+
+let latestStatusExitCode: number | undefined;
+
+function setStatusExitCode(code: number): void {
+	latestStatusExitCode = code;
+}
+
+function getStatusExitCode(): number | undefined {
+	return latestStatusExitCode;
+}
+
+function resetStatusExitCode(): void {
+	latestStatusExitCode = undefined;
+}
 
 /**
  * Drives a set of source checks and renders the result. In an interactive
@@ -45,12 +62,14 @@ async function runStatus(
 	quiet: boolean,
 	out: Out,
 ): Promise<void> {
+	resetStatusExitCode();
+
 	// Spinners and per-row streaming only make sense in a real terminal: JSON
 	// must stay a single array on stdout, non-TTY output is machine-bound, and
 	// quiet suppresses decoration entirely.
 	if (out.isTTY && !out.jsonMode && !quiet) {
 		const rows = await streamStatus(tasks, selected, out);
-		process.exitCode = summarizeExitCode(rows);
+		setStatusExitCode(summarizeExitCode(rows));
 		return;
 	}
 
@@ -88,6 +107,7 @@ async function streamStatus(
 	);
 
 	let spinner = out.spinner(checkingText(pending));
+	let renderedRows = 0;
 	try {
 		while (inFlight.size > 0) {
 			const settled = await Promise.race(
@@ -102,7 +122,8 @@ async function streamStatus(
 			collected.push(row);
 
 			spinner.stop();
-			renderStatusRow(row, out);
+			renderStatusRow(row, out, { leadingBlank: renderedRows > 0 });
+			renderedRows += 1;
 			if (pending.size > 0) {
 				spinner = out.spinner(checkingText(pending));
 			}
@@ -126,11 +147,10 @@ function finishStatus(
 		renderStatusRows(sortRows(rows), out);
 	}
 
-	// Reflect status severity in the exit code regardless of --quiet. We set
-	// process.exitCode rather than calling exit() so the in-process testkit is
-	// not killed; main.ts applies it on a successful run, where dreamcli would
-	// otherwise force a 0 exit code.
-	process.exitCode = summarizeExitCode(rows);
+	// Reflect status severity in the process exit code when main.ts exits the
+	// real CLI. The command action itself stays process-free so in-process tests
+	// can run outage cases without poisoning the host test runner.
+	setStatusExitCode(summarizeExitCode(rows));
 }
 
 function applyModelFilter(
@@ -199,4 +219,25 @@ const downdetectorCommand = command('downdetector')
 		await runStatus(tasks, new Set(), flags.quiet, out);
 	});
 
-export { anthropicCommand, downdetectorCommand, statusCommand };
+function createWebCommand(openUrl: UrlOpener = openUrlInDefaultBrowser) {
+	return command('web')
+		.alias('site')
+		.description('Open the live status page')
+		.example('web', 'Open the live status page in your browser')
+		.action(async ({ out }) => {
+			await openUrl(pkg.homepage);
+			out.log(`Opening ${pkg.homepage}`);
+		});
+}
+
+const webCommand = createWebCommand();
+
+export {
+	anthropicCommand,
+	createWebCommand,
+	downdetectorCommand,
+	getStatusExitCode,
+	resetStatusExitCode,
+	statusCommand,
+	webCommand,
+};
