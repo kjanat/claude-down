@@ -102,6 +102,28 @@ function normalizeHeroStatus(value: unknown): HeroStatus {
 	};
 }
 
+function hasStringProperty(
+	value: Record<string, unknown>,
+	key: string,
+): boolean {
+	return typeof value[key] === 'string';
+}
+
+function isIncident(value: unknown): value is Incident {
+	return isRecord(value)
+		&& hasStringProperty(value, 'name')
+		&& hasStringProperty(value, 'impact')
+		&& hasStringProperty(value, 'status')
+		&& hasStringProperty(value, 'created_at')
+		&& hasStringProperty(value, 'updated_at');
+}
+
+function isComponent(value: unknown): value is Component {
+	return isRecord(value)
+		&& hasStringProperty(value, 'name')
+		&& hasStringProperty(value, 'status');
+}
+
 function normalizeSummary(result: unknown): StatusSummary {
 	const payload = getPayload(result);
 
@@ -111,10 +133,10 @@ function normalizeSummary(result: unknown): StatusSummary {
 
 	const status = normalizeHeroStatus(payload.status);
 	const incidents = Array.isArray(payload.incidents)
-		? payload.incidents as Incident[]
+		? payload.incidents.filter(isIncident)
 		: [];
 	const components = Array.isArray(payload.components)
-		? payload.components as Component[]
+		? payload.components.filter(isComponent)
 		: [];
 	const conservativeIndicator = deriveConservativeIndicator(
 		status.indicator,

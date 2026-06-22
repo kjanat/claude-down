@@ -42,6 +42,10 @@ function getStatusExitCode(): number | undefined {
 	return latestStatusExitCode;
 }
 
+function resetStatusExitCode(): void {
+	latestStatusExitCode = undefined;
+}
+
 /**
  * Drives a set of source checks and renders the result. In an interactive
  * terminal each row is streamed in as it resolves behind a spinner; otherwise
@@ -54,6 +58,8 @@ async function runStatus(
 	quiet: boolean,
 	out: Out,
 ): Promise<void> {
+	resetStatusExitCode();
+
 	// Spinners and per-row streaming only make sense in a real terminal: JSON
 	// must stay a single array on stdout, non-TTY output is machine-bound, and
 	// quiet suppresses decoration entirely.
@@ -213,5 +219,6 @@ export {
 	anthropicCommand,
 	downdetectorCommand,
 	getStatusExitCode,
+	resetStatusExitCode,
 	statusCommand,
 };

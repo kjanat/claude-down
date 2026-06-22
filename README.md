@@ -82,9 +82,9 @@ claude-down status -q
 
 ### pick your place
 
-default check uses Anthropic. Downdetector is opt-in because Cloudflare may
-challenge automated checks. use subcommand or `--source`; `--source` eat commas
-and repeats.
+default check uses Anthropic and Downdetector. use subcommand or `--source`;
+`--source` eat commas and repeats. Downdetector may report unavailable if
+Cloudflare challenge automated checks.
 
 ```bash
 # subcommand

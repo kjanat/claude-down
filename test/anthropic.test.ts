@@ -7,6 +7,7 @@ import {
 import { checkAnthropic } from '#claude-down/lib/anthropic';
 import {
 	cacheControlHeader,
+	withSummaryBody,
 	withSummaryFixture,
 } from '#test/support/statuspage-fixture.ts';
 
@@ -99,6 +100,38 @@ describe('checkAnthropicSource', () => {
 				incidents: null,
 				affectedComponents: null,
 			});
+			expect(server.requests).toEqual(['/api/v2/summary.json']);
+		});
+	});
+
+	test('keeps summary text aligned with promoted severity', async () => {
+		await withSummaryBody({
+			page: {
+				id: 'page',
+				name: 'Claude',
+				time_zone: 'Etc/UTC',
+				updated_at: '2026-06-22T00:00:00.000Z',
+				url: 'https://status.claude.com',
+			},
+			components: [{
+				name: 'Claude API (api.anthropic.com)',
+				status: 'partial_outage',
+			}],
+			incidents: [{
+				impact: 'major',
+				name: 'Elevated Error Rates',
+				status: 'investigating',
+			}],
+			scheduled_maintenances: [],
+			status: {
+				description: 'Minor Service Outage',
+				indicator: 'minor',
+			},
+		}, async (server) => {
+			const row = await checkAnthropicSource(server.baseUrl);
+
+			expect(row.indicator).toBe('major');
+			expect(row.summaryText).toBe('Major Service Outage (reported minor)');
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
 	});

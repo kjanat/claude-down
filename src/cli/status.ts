@@ -3,7 +3,10 @@ import type { Source, StatusRow } from '#claude-down/cli/model';
 import { checkAnthropic } from '#claude-down/lib/anthropic';
 import { EXIT_CODES } from '#claude-down/lib/constants';
 import { checkDownDetector } from '#claude-down/lib/downdetector';
-import { deriveConservativeIndicator } from '#claude-down/lib/severity';
+import {
+	deriveConservativeIndicator,
+	describeIndicator,
+} from '#claude-down/lib/severity';
 import type { ComponentStatus } from '#claude-down/lib/types';
 
 function normalizeComponentStatus(value: string): ComponentStatus {
@@ -34,11 +37,15 @@ async function checkAnthropicSource(
 		};
 	}
 
+	const reportedIndicator = result.summary.status.indicator;
 	const indicator = deriveConservativeIndicator(
-		result.summary.status.indicator,
+		reportedIndicator,
 		result.summary.incidents,
 		result.summary.components,
 	);
+	const summaryText = indicator === reportedIndicator
+		? result.summary.status.description
+		: `${describeIndicator(indicator)} (reported ${String(reportedIndicator)})`;
 	const affectedComponents = result.summary.components.filter(
 		(component) => component.status !== 'operational',
 	);
@@ -46,7 +53,7 @@ async function checkAnthropicSource(
 	return {
 		source: 'anthropic',
 		indicator,
-		summaryText: result.summary.status.description,
+		summaryText,
 		incidents: result.summary.incidents.length > 0
 			? result.summary.incidents.map((incident) => ({
 				name: incident.name,

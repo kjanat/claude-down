@@ -226,19 +226,6 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 		});
 	});
 
-	test('status command defaults to Anthropic only', async () => {
-		await withSummaryFixture('anthropic-up.json', async (server) => {
-			const result = await runCommand(statusCommand, [], {
-				env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
-			});
-
-			expect(result.exitCode).toBe(0);
-			expect(result.stderr).toEqual([]);
-			expect(JSON.parse(result.stdout[0] ?? 'null')).toEqual(upOutputRow());
-			expect(server.requests).toEqual(['/api/v2/summary.json']);
-		});
-	});
-
 	test('renders Anthropic unavailable as a dim row in TTY mode', async () => {
 		await withClosedPort(async (baseUrl) => {
 			const result = await runCommand(anthropicCommand, [], {

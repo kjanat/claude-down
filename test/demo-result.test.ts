@@ -53,8 +53,11 @@ describe(normalizeSummary.name, () => {
 				indicator: 'minor',
 			},
 			incidents: [{
+				created_at: '2026-06-22T00:00:00.000Z',
 				impact: 'major',
 				name: 'Elevated error rates',
+				status: 'investigating',
+				updated_at: '2026-06-22T00:00:00.000Z',
 			}],
 			components: [],
 		});
@@ -64,6 +67,41 @@ describe(normalizeSummary.name, () => {
 			indicator: 'major',
 			reportedIndicator: 'minor',
 		});
+	});
+
+	test('drops malformed incident and component entries', () => {
+		const summary = normalizeSummary({
+			status: {
+				description: 'All Systems Operational',
+				indicator: 'none',
+			},
+			incidents: [
+				null,
+				'bad',
+				{ impact: 'critical' },
+				{
+					created_at: '2026-06-22T00:00:00.000Z',
+					impact: 'minor',
+					name: 'Latency',
+					status: 'monitoring',
+					updated_at: '2026-06-22T00:00:00.000Z',
+				},
+			],
+			components: [
+				null,
+				'bad',
+				{ status: 'major_outage' },
+				{ name: 'Claude API', status: 'partial_outage' },
+			],
+		});
+
+		expect(summary.incidents.map((incident) => incident.name)).toEqual([
+			'Latency',
+		]);
+		expect(summary.components.map((component) => component.name)).toEqual([
+			'Claude API',
+		]);
+		expect(summary.status.indicator).toBe('major');
 	});
 
 	test('accepts wrapped payloads and string hero statuses', () => {

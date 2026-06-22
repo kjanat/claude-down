@@ -32,6 +32,11 @@ describe('demo utilities', () => {
 	test('formats errors and dates', () => {
 		expect(getErrorMessage(new Error('boom'))).toBe('boom');
 		expect(getErrorMessage('plain')).toBe('plain');
-		expect(typeof fmt('2026-06-22T00:00:00.000Z')).toBe('string');
+		expect(fmt('2026-06-22T00:00:00.000Z')).toBe(
+			new Date('2026-06-22T00:00:00.000Z').toLocaleString(undefined, {
+				dateStyle: 'medium',
+				timeStyle: 'short',
+			}),
+		);
 	});
 });

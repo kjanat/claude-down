@@ -7,6 +7,7 @@ import {
 	selectedModels,
 	selectedSources,
 } from '#claude-down/cli/flags';
+import { sources } from '#claude-down/cli/model';
 import type { Model, Source, StatusRow } from '#claude-down/cli/model';
 import {
 	filterAnthropicByModels,
@@ -100,8 +101,11 @@ describe(parseSourceList.name, () => {
 });
 
 describe(selectedSources.name, () => {
-	test('defaults to Anthropic only', () => {
-		expect(selectedSources([['anthropic']])).toEqual(['anthropic']);
+	test('supports the all-sources default', () => {
+		expect(selectedSources([[...sources]])).toEqual([
+			'anthropic',
+			'downdetector',
+		]);
 	});
 
 	test('flattens per-occurrence lists', () => {
