@@ -66,7 +66,9 @@
 		"preview": "bun start",
 		"site:build": "bun build --compile --target=browser ./demo/index.html --outdir=dist/site --minify",
 		"prestart": "bun site:build",
-		"start": "bunx serve dist/site"
+		"start": "bunx serve dist/site",
+		"publish:npm": "bunx npm@latest publish --access public --provenance",
+		"publish:pkg-pr-new": "bunx pkg-pr-new publish --bun --bin --packageManager=npm,bun,pnpm"
 	},
 	"dependencies": {
 		"@kjanat/dreamcli": "^2.4"

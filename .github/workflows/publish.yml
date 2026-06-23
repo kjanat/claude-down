@@ -1,15 +1,14 @@
 ---
 name: publish to npm
-on: { push: { tags: ["v*"] }, workflow_dispatch }
+on: { push: { tags: ["v*"] }, workflow_dispatch: null }
 permissions: { id-token: write, contents: read }
 jobs:
   publish:
     runs-on: ubuntu-latest
     environment: { name: npm, url: https://npm.im/claude-down }
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-      - uses: actions/setup-node@v6
-        with: { node-version: latest, registry-url: https://registry.npmjs.org }
-      - run: bun install --frozen-lockfile
-      - run: npm publish --access public --provenance
+    steps: [
+      uses: actions/checkout@v7,
+      uses: kjanat/runner@master,
+      uses: oven-sh/setup-bun@v2,
+      run: runner install --frozen --kill-on-fail publish:npm,
+    ]
