@@ -36,20 +36,6 @@ type SourceTask = Readonly<{
 
 type UrlOpener = (url: string) => Promise<void> | void;
 
-let latestStatusExitCode: number | undefined;
-
-function setStatusExitCode(code: number): void {
-	latestStatusExitCode = code;
-}
-
-function getStatusExitCode(): number | undefined {
-	return latestStatusExitCode;
-}
-
-function resetStatusExitCode(): void {
-	latestStatusExitCode = undefined;
-}
-
 /**
  * Drives a set of source checks and renders the result. In an interactive
  * terminal each row is streamed in as it resolves behind a spinner; otherwise
@@ -62,14 +48,12 @@ async function runStatus(
 	quiet: boolean,
 	out: Out,
 ): Promise<void> {
-	resetStatusExitCode();
-
 	// Spinners and per-row streaming only make sense in a real terminal: JSON
 	// must stay a single array on stdout, non-TTY output is machine-bound, and
 	// quiet suppresses decoration entirely.
 	if (out.isTTY && !out.jsonMode && !quiet) {
 		const rows = await streamStatus(tasks, selected, out);
-		setStatusExitCode(summarizeExitCode(rows));
+		out.setExitCode(summarizeExitCode(rows));
 		return;
 	}
 
@@ -147,10 +131,7 @@ function finishStatus(
 		renderStatusRows(sortRows(rows), out);
 	}
 
-	// Reflect status severity in the process exit code when main.ts exits the
-	// real CLI. The command action itself stays process-free so in-process tests
-	// can run outage cases without poisoning the host test runner.
-	setStatusExitCode(summarizeExitCode(rows));
+	out.setExitCode(summarizeExitCode(rows));
 }
 
 function applyModelFilter(
@@ -236,8 +217,6 @@ export {
 	anthropicCommand,
 	createWebCommand,
 	downdetectorCommand,
-	getStatusExitCode,
-	resetStatusExitCode,
 	statusCommand,
 	webCommand,
 };

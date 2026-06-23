@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { claudeDown } from '#claude-down/cli';
-import { getStatusExitCode } from '#claude-down/cli/commands';
 import { helpFooter, wantsHelp } from '#claude-down/cli/help-footer';
 import pkg from '#pkg' with { type: 'json' };
 import { createNodeAdapter } from '@kjanat/dreamcli/runtime';
@@ -20,9 +19,7 @@ if (import.meta.main) {
 				if (showFooter) {
 					adapter.stdout(helpFooter(pkg.homepage, adapter.isTTY));
 				}
-				// A successful command resolves to exit code 0 in dreamcli; honor any
-				// status-derived code the action recorded instead of forcing 0.
-				return adapter.exit(code !== 0 ? code : getStatusExitCode() ?? 0);
+				return adapter.exit(code);
 			},
 		},
 	});

@@ -5,6 +5,7 @@ import {
 } from '#claude-down/cli/commands';
 import { claudeDown } from '#claude-down/cli/index';
 import { renderStatusRow } from '#claude-down/cli/render';
+import { EXIT_CODES } from '#claude-down/lib/constants';
 import pkg from '#pkg' with { type: 'json' };
 import {
 	anthropicStatusBaseEnvVar,
@@ -184,7 +185,7 @@ describe('CLI status output', () => {
 				isTTY: true,
 			});
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode).toBe(EXIT_CODES.major);
 			expect(result.stderr).toEqual([]);
 			expect(result.stdout).toEqual([
 				`\
@@ -231,7 +232,7 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 				env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
 			});
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode).toBe(EXIT_CODES.major);
 			expect(result.stderr).toEqual([]);
 			expect(JSON.parse(result.stdout[0] ?? 'null')).toEqual(downOutputRow());
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
@@ -260,7 +261,7 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 				isTTY: true,
 			});
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode).toBe(EXIT_CODES.unavailable);
 			expect(result.stderr).toEqual([]);
 			expect(result.stdout).toHaveLength(2);
 			const [body, footer] = result.stdout;
@@ -347,7 +348,7 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 				{ env: { [anthropicStatusBaseEnvVar]: baseUrl } },
 			);
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode).toBe(EXIT_CODES.unavailable);
 			expect(result.stderr).toEqual([]);
 			const parsed = JSON.parse(result.stdout[0] ?? 'null');
 			expect(parsed).toHaveLength(1);
