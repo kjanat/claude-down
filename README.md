@@ -1,6 +1,6 @@
 # claude-down
 
-[![NPM Version](https://img.shields.io/npm/v/claude-down?logo=npm&labelColor=CB3837&color=black)](https://www.npmjs.com/package/claude-down)
+[![NPM Version](https://img.shields.io/npm/v/claude-down?logo=npm&labelColor=CB3837&color=black)](https://npm.im/claude-down)
 [![pkg.pr.new](https://pkg.pr.new/badge/kjanat/claude-down)](https://pkg.pr.new/~/kjanat/claude-down)
 
 is claude down (again) (yes). booga check, you no cry.
@@ -21,7 +21,7 @@ npx -y claude-down@latest --fable
 
 no install, no terminal. page poll itself, you stare:
 
-<https://kjanat.github.io/claude-down/>
+[https://claude-down.kjanat.dev/][site]
 
 or pop it from the cli:
 
@@ -181,3 +181,4 @@ bun test      # test
 [LICENSE]: https://github.com/kjanat/claude-down/blob/master/LICENSE
 [dreamcli]: https://github.com/kjanat/dreamcli
 [pkg.pr.new]: https://pkg.pr.new
+[site]: https://claude-down.kjanat.dev

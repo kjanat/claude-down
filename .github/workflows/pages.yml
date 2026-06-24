@@ -9,7 +9,7 @@ jobs:
     steps: [
       uses: actions/checkout@v7,
       uses: oven-sh/setup-bun@v2,
-      run: "bun site:build --public-path=\"$('https://{0}.github.io/{1}/' -f $env:GITHUB_REPOSITORY.Split('/'))\"",
+      run: "bun site:build --public-path=$(jq -r .homepage package.json)",
       { uses: kjanat/404@master, with: { directory: dist/site } },
       { uses: actions/upload-pages-artifact@v5, with: { path: dist/site } },
     ]

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 
 import { defaultBrowserOpenCommand } from '#claude-down/lib/open-url';
 
-const url = 'https://kjanat.github.io/claude-down/';
+const url = 'https://claude-down.kjanat.dev/';
 
 describe(defaultBrowserOpenCommand.name, () => {
 	test('uses open on macOS', () => {
