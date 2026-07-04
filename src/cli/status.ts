@@ -1,4 +1,9 @@
-import { type Model, nameMatchesModels } from '#claude-down/cli/model';
+import {
+	type Model,
+	modelsNamedInText,
+	nameMatchesManyModels,
+	nameMatchesModels,
+} from '#claude-down/cli/model';
 import type { Source, StatusRow } from '#claude-down/cli/model';
 import { checkAnthropic } from '#claude-down/lib/anthropic';
 import { EXIT_CODES } from '#claude-down/lib/constants';
@@ -114,6 +119,40 @@ async function checkSources(
 	);
 }
 
+function addModelsNamedInItems(
+	affectedModels: Set<Model>,
+	items: readonly { name: string }[],
+	selected: ReadonlySet<Model>,
+): boolean {
+	let hasBroadModelMatch = false;
+
+	for (const item of items) {
+		if (nameMatchesManyModels(item.name)) hasBroadModelMatch = true;
+		for (const model of modelsNamedInText(item.name, selected)) {
+			affectedModels.add(model);
+		}
+	}
+
+	return hasBroadModelMatch;
+}
+
+function matchedModelNames(
+	incidents: readonly { name: string }[],
+	affectedComponents: readonly { name: string }[],
+	selected: ReadonlySet<Model>,
+): Model[] {
+	const affectedModels = new Set<Model>();
+	const hasBroadModelMatch =
+		addModelsNamedInItems(affectedModels, incidents, selected)
+		|| addModelsNamedInItems(affectedModels, affectedComponents, selected);
+
+	if (hasBroadModelMatch) {
+		for (const model of selected) affectedModels.add(model);
+	}
+
+	return [...selected].filter((model) => affectedModels.has(model));
+}
+
 /**
  * Narrows an Anthropic row to incidents/components naming the selected models
  * and re-derives its result from those matches (operational when none match).
@@ -124,7 +163,8 @@ function filterAnthropicByModels(
 	selected: ReadonlySet<Model>,
 ): StatusRow {
 	if (
-		row.source !== 'anthropic' || selected.size === 0
+		row.source !== 'anthropic'
+		|| selected.size === 0
 		|| row.indicator === 'unavailable'
 	) {
 		return row;
@@ -137,18 +177,17 @@ function filterAnthropicByModels(
 	const affectedComponents =
 		row.affectedComponents?.filter((component) =>
 			nameMatchesModels(component.name, selected)
-		)
-			?? [];
+		) ?? [];
 
 	const matchCount = incidents.length + affectedComponents.length;
 	// Only name the models that actually appear in a matched incident/component
 	// — not every queried model — so `--fable --opus` reports just Fable when
-	// Opus is unaffected.
-	const affectedModels = [...selected].filter((model) =>
-		incidents.some((incident) => incident.name.toLowerCase().includes(model))
-		|| affectedComponents.some((component) =>
-			component.name.toLowerCase().includes(model)
-		)
+	// Opus is unaffected. Broad incidents like "many models" affect all queried
+	// models because the status page gives no narrower model list.
+	const affectedModelNames = matchedModelNames(
+		incidents,
+		affectedComponents,
+		selected,
 	);
 
 	return {
@@ -156,7 +195,9 @@ function filterAnthropicByModels(
 		indicator: matchCount > 0 ? 'major' : 'none',
 		summaryText: matchCount > 0
 			? `${matchCount} report${matchCount === 1 ? '' : 's'} affecting ${
-				affectedModels.join(', ')
+				affectedModelNames.join(
+					', ',
+				)
 			}`
 			: `No incidents reported for ${[...selected].join(', ')}`,
 		incidents: incidents.length > 0 ? incidents : null,

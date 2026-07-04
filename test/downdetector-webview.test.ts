@@ -142,11 +142,7 @@ describe(checkWithWebView.name, () => {
 
 describe(checkWithWebViewWorker.name, () => {
 	test('returns unavailable instead of hanging when browser navigation stalls', async () => {
-		const result = await checkWithWebViewWorker(
-			'about:blank',
-			undefined,
-			1,
-		);
+		const result = await checkWithWebViewWorker('about:blank', undefined, 1);
 
 		expect(result).toEqual({ ok: false, error: 'Bun.WebView timed out' });
 	});

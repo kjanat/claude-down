@@ -67,7 +67,9 @@ async function runStatus(
 /** Spinner label naming the sources still being checked. */
 function checkingText(pending: ReadonlySet<Source>): string {
 	return `Checking ${
-		[...pending].map((source) => sourceLabels[source]).join(', ')
+		[...pending]
+			.map((source) => sourceLabels[source])
+			.join(', ')
 	}…`;
 }
 
@@ -85,8 +87,12 @@ async function streamStatus(
 	const pending = new Set<Source>(tasks.map((task) => task.source));
 	const collected: StatusRow[] = [];
 	const inFlight = new Map(
-		tasks.map((task, index) =>
-			[index, task.run().then((row) => ({ source: task.source, row }))] as const
+		tasks.map(
+			(task, index) =>
+				[
+					index,
+					task.run().then((row) => ({ source: task.source, row })),
+				] as const,
 		),
 	);
 
@@ -160,10 +166,12 @@ const statusCommand = command('status')
 	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
 		const { source, anthropicStatusBase, chrome, quiet } = flags;
-		const tasks = selectedSources(source).map((src): SourceTask => ({
-			source: src,
-			run: () => checkSource(src, anthropicStatusBase, chrome),
-		}));
+		const tasks = selectedSources(source).map(
+			(src): SourceTask => ({
+				source: src,
+				run: () => checkSource(src, anthropicStatusBase, chrome),
+			}),
+		);
 		await runStatus(tasks, selectedModels(flags), quiet, out);
 	});
 
@@ -180,10 +188,12 @@ const anthropicCommand = command('anthropic')
 	.flag('mythos', modelConvenienceFlags.mythos)
 	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
-		const tasks: SourceTask[] = [{
-			source: 'anthropic',
-			run: () => checkAnthropicSource(flags.anthropicStatusBase),
-		}];
+		const tasks: SourceTask[] = [
+			{
+				source: 'anthropic',
+				run: () => checkAnthropicSource(flags.anthropicStatusBase),
+			},
+		];
 		await runStatus(tasks, selectedModels(flags), flags.quiet, out);
 	});
 
@@ -193,10 +203,12 @@ const downdetectorCommand = command('downdetector')
 	.flag('chrome', chromeFlag)
 	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
-		const tasks: SourceTask[] = [{
-			source: 'downdetector',
-			run: () => checkDowndetectorSource(flags.chrome),
-		}];
+		const tasks: SourceTask[] = [
+			{
+				source: 'downdetector',
+				run: () => checkDowndetectorSource(flags.chrome),
+			},
+		];
 		await runStatus(tasks, new Set(), flags.quiet, out);
 	});
 

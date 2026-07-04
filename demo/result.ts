@@ -69,11 +69,9 @@ function getPayload(result: unknown): unknown {
 		return result;
 	}
 
-	return result.summary
-		?? result.data
-		?? result.value
-		?? result.result
-		?? result;
+	return (
+		result.summary ?? result.data ?? result.value ?? result.result ?? result
+	);
 }
 
 function normalizeHeroStatus(value: unknown): HeroStatus {
@@ -110,18 +108,22 @@ function hasStringProperty(
 }
 
 function isIncident(value: unknown): value is Incident {
-	return isRecord(value)
+	return (
+		isRecord(value)
 		&& hasStringProperty(value, 'name')
 		&& hasStringProperty(value, 'impact')
 		&& hasStringProperty(value, 'status')
 		&& hasStringProperty(value, 'created_at')
-		&& hasStringProperty(value, 'updated_at');
+		&& hasStringProperty(value, 'updated_at')
+	);
 }
 
 function isComponent(value: unknown): value is Component {
-	return isRecord(value)
+	return (
+		isRecord(value)
 		&& hasStringProperty(value, 'name')
-		&& hasStringProperty(value, 'status');
+		&& hasStringProperty(value, 'status')
+	);
 }
 
 function normalizeSummary(result: unknown): StatusSummary {

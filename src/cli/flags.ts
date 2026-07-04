@@ -29,7 +29,9 @@ function csvEnumParser<T extends string>(
 			if (match === undefined) {
 				throw new ParseError(
 					`Invalid value '${name}' for flag --${flagName}. Allowed: ${
-						allowed.join(', ')
+						allowed.join(
+							', ',
+						)
 					}`,
 					{
 						code: 'INVALID_VALUE',
@@ -104,7 +106,10 @@ const modelConvenienceFlags = {
  * `--model` resolves to one list per occurrence, flattened below. */
 type ModelFlagValues =
 	& { model: readonly (readonly Model[])[] }
-	& Record<Model, boolean>;
+	& Record<
+		Model,
+		boolean
+	>;
 
 /** Unions the `--model` lists with any enabled per-model convenience flags. */
 function selectedModels(flags: ModelFlagValues): Set<Model> {

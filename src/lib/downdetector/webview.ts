@@ -87,14 +87,16 @@ function isPogoSnapshot(value) {
 async function pollPogoSnapshot(view) {
 	const deadline = Date.now() + SNAPSHOT_TIMEOUT_MS;
 	while (Date.now() < deadline) {
-		const snapshot = await view.evaluate(` + JSON.stringify(`({
+		const snapshot = await view.evaluate(`
+	+ JSON.stringify(`({
 	title: document.title,
 	pogo: window.PogoConfig ?? null,
 	h1: document.querySelector('h1')?.innerText ?? null,
 	cfChallenge: document.title === 'Just a moment...'
 		|| document.querySelector('script[src*="/cdn-cgi/challenge-platform/"]') !== null
 		|| document.body?.innerText?.includes('Enable JavaScript and cookies to continue') === true,
-})`) + `).catch(() => null);
+})`)
+	+ `).catch(() => null);
 		if (isPogoSnapshot(snapshot) && snapshot.cfChallenge === true) {
 			return { kind: 'cloudflare-challenge' };
 		}
@@ -161,9 +163,7 @@ function getBunGlobal(): BunGlobal | null {
 
 function getBunWebView(): WebViewConstructor | null {
 	const WebView = getBunGlobal()?.WebView;
-	return typeof WebView === 'function'
-		? WebView as WebViewConstructor
-		: null;
+	return typeof WebView === 'function' ? (WebView as WebViewConstructor) : null;
 }
 
 function isBunRuntime(): boolean {

@@ -44,9 +44,10 @@ function renderResult(result: unknown, lastUpdatedAt: Date): void {
 	renderComponents(components);
 }
 
-async function fetchAndRender(): Promise<
-	{ result: unknown; intervalMs: number }
-> {
+async function fetchAndRender(): Promise<{
+	result: unknown;
+	intervalMs: number;
+}> {
 	const result: unknown = await checkAnthropic();
 	renderResult(result, new Date());
 
@@ -82,9 +83,12 @@ function schedulePoll(delayMs: number = pollIntervalMs): void {
 
 	setPollingIcon(true);
 
-	pollTimer = window.setTimeout(() => {
-		void poll();
-	}, Math.max(0, delayMs));
+	pollTimer = window.setTimeout(
+		() => {
+			void poll();
+		},
+		Math.max(0, delayMs),
+	);
 }
 
 function startPolling(): void {

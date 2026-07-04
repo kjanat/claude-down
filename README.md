@@ -11,12 +11,6 @@ place same time:
 - **status.claude.com** — what anthropic admit to.
 - **Downdetector** — what everyone else screaming about, usually first.
 
-fable 5 cooked rn (anthropic suspend access). it back yet??
-
-```bash
-npx -y claude-down@latest --fable
-```
-
 ## or just watch the page
 
 no install, no terminal. page poll itself, you stare:

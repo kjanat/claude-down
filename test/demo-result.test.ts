@@ -14,9 +14,7 @@ describe(getResultErrorMessage.name, () => {
 		expect(getResultErrorMessage({ reason: new Error('reason') })).toBe(
 			'reason',
 		);
-		expect(getResultErrorMessage({ error: 'bad gateway' })).toBe(
-			'bad gateway',
-		);
+		expect(getResultErrorMessage({ error: 'bad gateway' })).toBe('bad gateway');
 		expect(getResultErrorMessage({ message: 'failed' })).toBe('failed');
 		expect(getResultErrorMessage({})).toBe('Unknown error');
 	});
@@ -54,13 +52,15 @@ describe(normalizeSummary.name, () => {
 				description: 'All Systems Operational',
 				indicator: 'none',
 			},
-			incidents: [{
-				created_at: '2026-06-13T00:00:00.000Z',
-				impact: 'major',
-				name: 'We’ve suspended access to Claude Mythos 5 and Claude Fable 5',
-				status: 'investigating',
-				updated_at: '2026-06-16T00:00:00.000Z',
-			}],
+			incidents: [
+				{
+					created_at: '2026-06-13T00:00:00.000Z',
+					impact: 'major',
+					name: 'We’ve suspended access to Claude Mythos 5 and Claude Fable 5',
+					status: 'investigating',
+					updated_at: '2026-06-16T00:00:00.000Z',
+				},
+			],
 			components: [
 				{ name: 'claude.ai', status: 'operational' },
 				{ name: 'Claude API', status: 'operational' },
@@ -80,13 +80,15 @@ describe(normalizeSummary.name, () => {
 				description: 'Minor Service Outage',
 				indicator: 'minor',
 			},
-			incidents: [{
-				created_at: '2026-06-22T00:00:00.000Z',
-				impact: 'major',
-				name: 'Elevated error rates',
-				status: 'investigating',
-				updated_at: '2026-06-22T00:00:00.000Z',
-			}],
+			incidents: [
+				{
+					created_at: '2026-06-22T00:00:00.000Z',
+					impact: 'major',
+					name: 'Elevated error rates',
+					status: 'investigating',
+					updated_at: '2026-06-22T00:00:00.000Z',
+				},
+			],
 			components: [{ name: 'Claude API', status: 'partial_outage' }],
 		});
 

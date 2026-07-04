@@ -78,9 +78,12 @@ function isPogoSnapshot(value: unknown): value is PogoSnapshot {
 	if (typeof pogo !== 'object') return false;
 
 	if (
-		'outage' in pogo && pogo.outage !== undefined
+		'outage' in pogo
+		&& pogo.outage !== undefined
 		&& typeof pogo.outage !== 'boolean'
-	) return false;
+	) {
+		return false;
+	}
 
 	return true;
 }
@@ -125,10 +128,7 @@ async function pollPogoSnapshotFromEvaluate(
 			return { kind: 'cloudflare-challenge' };
 		}
 
-		if (
-			isPogoSnapshot(snapshot)
-			&& snapshot.pogo !== null
-		) {
+		if (isPogoSnapshot(snapshot) && snapshot.pogo !== null) {
 			return { kind: 'status', pogo: snapshot.pogo, heading: snapshot.h1 };
 		}
 

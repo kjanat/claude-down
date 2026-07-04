@@ -1,15 +1,25 @@
 {
-	"extends": "https://raw.githubusercontent.com/kjanat/kjanat/master/configs/dprint.remote.json",
+	"extends": "https://github.com/kjanat/kjanat/raw/e17f3511/configs/dprint.remote.json",
 	"lineWidth": 80,
-	"markdown": { "associations": ["!README.md"] },
+	"markdown": { "associations": ["!./README.md"] },
 	"prettier": {
-		"associations": ["README.md"],
+		"associations": [
+			"!**/*",
+			"!!./README.md",
+			"./README.md",
+		],
 		"useTabs": false,
 		"printWidth": 80,
 	},
+	"typescript": { "quoteStyle": "preferSingle" },
 	"malva": { "printWidth": 120 },
 	"markup": { "printWidth": 120 },
 	"json": { "lineWidth": 120 },
+	"yaml": {
+		"printWidth": 160,
+		"flowSequence.preferSingleLine": false,
+		"flowMap.preferSingleLine": true,
+	},
 	"plugins": [
 		"https://plugins.dprint.dev/prettier-0.72.0.json@6e7af2cb2182a5a11358d3adde9ae0ef3b94b7d2e5dcfdd252e3f7c3916541fe",
 		"https://plugins.dprint.dev/kjanat/sortpackagejson-0.2.1.wasm",

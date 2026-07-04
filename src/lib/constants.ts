@@ -2,11 +2,11 @@ import type { Indicator } from '#claude-down/lib/types';
 
 /** Mapping of status levels to their corresponding exit codes. */
 const EXIT_CODES = {
-	'none': 0,
-	'minor': 1,
-	'major': 2,
-	'critical': 2,
-	'unavailable': 21,
+	none: 0,
+	minor: 1,
+	major: 2,
+	critical: 2,
+	unavailable: 21,
 } as const satisfies Record<Indicator, number>;
 
 /** Base URL for Anthropic's status page API. */

@@ -18,17 +18,39 @@ const models = ['opus', 'haiku', 'sonnet', 'mythos', 'fable'] as const;
 
 type Model = (typeof models)[number];
 
-/** Case-insensitive check for whether a name mentions any of the selected models. */
+const broadModelMessagePattern =
+	/\b(?:all|many|most|multiple|several|some|various)\s+(?:claude\s+)?models?\b/;
+
+/** Case-insensitive check for broad incidents like "many models". */
+function nameMatchesManyModels(name: string): boolean {
+	return broadModelMessagePattern.test(name.toLowerCase());
+}
+
+/** Case-insensitive list of selected models directly named in text. */
+function modelsNamedInText(
+	name: string,
+	selected: ReadonlySet<Model>,
+): Model[] {
+	const lower = name.toLowerCase();
+	const matched: Model[] = [];
+
+	for (const model of selected) {
+		if (lower.includes(model)) matched.push(model);
+	}
+
+	return matched;
+}
+
+/** Case-insensitive check for whether a name mentions selected models. */
 function nameMatchesModels(
 	name: string,
 	selected: ReadonlySet<Model>,
 ): boolean {
-	const lower = name.toLowerCase();
-	for (const model of selected) {
-		if (lower.includes(model)) return true;
-	}
-
-	return false;
+	return (
+		selected.size > 0
+		&& (modelsNamedInText(name, selected).length > 0
+			|| nameMatchesManyModels(name))
+	);
 }
 
 type IncidentSummary = Readonly<{
@@ -77,7 +99,14 @@ type DowndetectorOutputRow = Readonly<{
 
 type StatusOutputRow = AnthropicOutputRow | DowndetectorOutputRow;
 
-export { models, nameMatchesModels, sourceLabels, sources };
+export {
+	models,
+	modelsNamedInText,
+	nameMatchesManyModels,
+	nameMatchesModels,
+	sourceLabels,
+	sources,
+};
 export type {
 	AnthropicStatusRow,
 	DowndetectorStatusRow,

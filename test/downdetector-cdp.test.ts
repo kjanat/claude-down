@@ -49,9 +49,11 @@ describe(openCdpTarget.name, () => {
 				url: String(input),
 			});
 
-			return new Response(JSON.stringify({
-				webSocketDebuggerUrl: 'ws://127.0.0.1/devtools/page/1',
-			}));
+			return new Response(
+				JSON.stringify({
+					webSocketDebuggerUrl: 'ws://127.0.0.1/devtools/page/1',
+				}),
+			);
 		}) as typeof fetch;
 		globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
 
@@ -63,20 +65,25 @@ describe(openCdpTarget.name, () => {
 		expect(target.ok).toBe(true);
 		if (!target.ok) throw new Error(target.error);
 
-		expect(requests).toEqual([{
-			method: 'PUT',
-			url: `http://127.0.0.1:9222/json/new?${
-				encodeURIComponent('about:blank')
-			}`,
-		}]);
-		expect(sentMessages.map(({ method, params }) => ({ method, params })))
-			.toEqual([
-				{ method: 'Page.enable', params: {} },
-				{
-					method: 'Page.navigate',
-					params: { url: DOWNDETECTOR_URL },
-				},
-			]);
+		expect(requests).toEqual([
+			{
+				method: 'PUT',
+				url: `http://127.0.0.1:9222/json/new?${
+					encodeURIComponent(
+						'about:blank',
+					)
+				}`,
+			},
+		]);
+		expect(
+			sentMessages.map(({ method, params }) => ({ method, params })),
+		).toEqual([
+			{ method: 'Page.enable', params: {} },
+			{
+				method: 'Page.navigate',
+				params: { url: DOWNDETECTOR_URL },
+			},
+		]);
 
 		target.close();
 	});

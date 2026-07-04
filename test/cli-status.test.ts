@@ -22,10 +22,12 @@ function downOutputRow() {
 			source: 'anthropic',
 			status: 'major',
 			details: 'Partial System Outage',
-			incidents: [{
-				name: 'Claude.ai unavailable and elevated errors on the API',
-				status: 'identified',
-			}],
+			incidents: [
+				{
+					name: 'Claude.ai unavailable and elevated errors on the API',
+					status: 'identified',
+				},
+			],
 			affected: [
 				{ name: 'claude.ai', status: 'major_outage' },
 				{ name: 'Claude API (api.anthropic.com)', status: 'partial_outage' },
@@ -224,13 +226,12 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 
 	test('root CLI dispatches explicit status command with down fixture JSON output', async () => {
 		await withSummaryFixture('anthropic-down.json', async (server) => {
-			const result = await claudeDown.execute([
-				'status',
-				'--source',
-				'anthropic',
-			], {
-				env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
-			});
+			const result = await claudeDown.execute(
+				['status', '--source', 'anthropic'],
+				{
+					env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+				},
+			);
 
 			expect(result.exitCode).toBe(EXIT_CODES.major);
 			expect(result.stderr).toEqual([]);
@@ -325,14 +326,14 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 
 	test('quiet mode suppresses the spinner even in a tty', async () => {
 		await withSummaryFixture('anthropic-up.json', async (server) => {
-			const result = await runCommand(statusCommand, [
-				'--source',
-				'anthropic',
-				'--quiet',
-			], {
-				env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
-				isTTY: true,
-			});
+			const result = await runCommand(
+				statusCommand,
+				['--source', 'anthropic', '--quiet'],
+				{
+					env: { [anthropicStatusBaseEnvVar]: server.baseUrl },
+					isTTY: true,
+				},
+			);
 
 			expect(result.exitCode).toBe(0);
 			expect(result.activity).toEqual([]);

@@ -29,8 +29,12 @@ function isTargetInfo(value: unknown): value is TargetInfo {
 
 /** Type guard to check if a value is a CDP message with an 'id' property. */
 function isCdpMessage(value: unknown): value is { id: number } {
-	return value !== null && typeof value === 'object' && 'id' in value
-		&& typeof value.id === 'number';
+	return (
+		value !== null
+		&& typeof value === 'object'
+		&& 'id' in value
+		&& typeof value.id === 'number'
+	);
 }
 
 /** Creates a CDP connection by wrapping a WebSocket and providing a send function for CDP commands. */

@@ -18,10 +18,22 @@
 	--color-critical: #dc2626; /* critical badge */
 	--color-info: #6366f1; /* under_maintenance */
 
-	--color-success-soft: color-mix(in srgb, var(--color-success) 20%, transparent);
-	--color-caution-soft: color-mix(in srgb, var(--color-caution) 20%, transparent);
+	--color-success-soft: color-mix(
+		in srgb,
+		var(--color-success) 20%,
+		transparent
+	);
+	--color-caution-soft: color-mix(
+		in srgb,
+		var(--color-caution) 20%,
+		transparent
+	);
 	--color-error-soft: color-mix(in srgb, var(--color-error) 20%, transparent);
-	--color-critical-soft: color-mix(in srgb, var(--color-critical) 20%, transparent);
+	--color-critical-soft: color-mix(
+		in srgb,
+		var(--color-critical) 20%,
+		transparent
+	);
 
 	--icon-github: url(./assets/github.svg);
 	--icon-loading: url(./assets/loading.svg);
@@ -54,7 +66,10 @@ header {
 	margin-bottom: 24px;
 }
 
-#name, .status, .comp-domain, .comp-name {
+#name,
+.status,
+.comp-domain,
+.comp-name {
 	-webkit-user-select: all;
 	user-select: all;
 }
@@ -364,7 +379,11 @@ header {
 	border-radius: 50%;
 	color: var(--color-muted);
 	background:
-		radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--color-muted) 14%, transparent), transparent 58%),
+		radial-gradient(
+			circle at 50% 100%,
+			color-mix(in srgb, var(--color-muted) 14%, transparent),
+			transparent 58%
+		),
 		var(--color-surface);
 	transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s, transform 0.2s;
 }
@@ -403,7 +422,11 @@ header {
 .footer-link-github:focus-visible {
 	color: var(--color-text-strong);
 	background:
-		radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--color-text-strong) 20%, transparent), transparent 58%),
+		radial-gradient(
+			circle at 50% 100%,
+			color-mix(in srgb, var(--color-text-strong) 20%, transparent),
+			transparent 58%
+		),
 		var(--color-surface);
 }
 
@@ -411,7 +434,11 @@ header {
 .footer-link-npm:focus-visible {
 	color: var(--color-warning);
 	background:
-		radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--color-warning) 22%, transparent), transparent 58%),
+		radial-gradient(
+			circle at 50% 100%,
+			color-mix(in srgb, var(--color-warning) 22%, transparent),
+			transparent 58%
+		),
 		var(--color-surface);
 }
 

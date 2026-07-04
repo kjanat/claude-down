@@ -7,7 +7,7 @@ import {
 	selectedModels,
 	selectedSources,
 } from '#claude-down/cli/flags';
-import { sources } from '#claude-down/cli/model';
+import { nameMatchesModels, sources } from '#claude-down/cli/model';
 import type { Model, Source, StatusRow } from '#claude-down/cli/model';
 import {
 	filterAnthropicByModels,
@@ -28,10 +28,12 @@ function anthropicRow(
 			{ name: 'Claude Opus 4.8 degraded', status: 'investigating' },
 			{ name: 'Sonnet latency', status: 'monitoring' },
 		],
-		affectedComponents: [{
-			name: 'Claude Haiku API',
-			status: 'degraded_performance',
-		}],
+		affectedComponents: [
+			{
+				name: 'Claude Haiku API',
+				status: 'degraded_performance',
+			},
+		],
 		...overrides,
 	};
 }
@@ -52,12 +54,10 @@ const modelFlags = (
 describe('selectedModels', () => {
 	test('unions --model array with convenience flags and dedupes', () => {
 		expect(
-			[...selectedModels(modelFlags(['opus'], { sonnet: true, opus: true }))]
-				.sort(),
-		).toEqual([
-			'opus',
-			'sonnet',
-		]);
+			[
+				...selectedModels(modelFlags(['opus'], { sonnet: true, opus: true })),
+			].sort(),
+		).toEqual(['opus', 'sonnet']);
 	});
 
 	test('empty when nothing selected', () => {
@@ -126,10 +126,12 @@ describe(filterAnthropicByModels.name, () => {
 		expect(filtered).toMatchObject({
 			source: 'anthropic',
 			indicator: 'major',
-			incidents: [{
-				name: 'Claude Opus 4.8 degraded',
-				status: 'investigating',
-			}],
+			incidents: [
+				{
+					name: 'Claude Opus 4.8 degraded',
+					status: 'investigating',
+				},
+			],
 			affectedComponents: null,
 		});
 		expect(filtered.summaryText).toContain('opus');
@@ -167,10 +169,12 @@ describe(filterAnthropicByModels.name, () => {
 		expect(filtered).toMatchObject({
 			indicator: 'major',
 			incidents: null,
-			affectedComponents: [{
-				name: 'Claude Haiku API',
-				status: 'degraded_performance',
-			}],
+			affectedComponents: [
+				{
+					name: 'Claude Haiku API',
+					status: 'degraded_performance',
+				},
+			],
 		});
 	});
 
@@ -185,6 +189,41 @@ describe(filterAnthropicByModels.name, () => {
 			affectedComponents: null,
 			summaryText: 'No incidents reported for fable',
 		});
+	});
+
+	test('matches broad many-model incident names', () => {
+		const filtered = filterAnthropicByModels(
+			anthropicRow({
+				incidents: [
+					{
+						name: 'Elevated errors across many models',
+						status: 'investigating',
+					},
+				],
+				affectedComponents: null,
+			}),
+			new Set<Model>(['fable']),
+		);
+
+		expect(filtered).toMatchObject({
+			indicator: 'major',
+			incidents: [
+				{
+					name: 'Elevated errors across many models',
+					status: 'investigating',
+				},
+			],
+			summaryText: '1 report affecting fable',
+		});
+	});
+
+	test('treats broad model wording as selected-model match', () => {
+		expect(
+			nameMatchesModels(
+				'Elevated errors across many models',
+				new Set<Model>(['opus']),
+			),
+		).toBe(true);
 	});
 
 	test('passes through the empty selection unchanged', () => {
@@ -218,8 +257,9 @@ describe('getExitCode', () => {
 	});
 
 	test('is zero when operational with no incidents', () => {
-		expect(getExitCode(anthropicRow({ indicator: 'none', incidents: null })))
-			.toBe(0);
+		expect(
+			getExitCode(anthropicRow({ indicator: 'none', incidents: null })),
+		).toBe(0);
 	});
 
 	test('reflects the indicator when it is more severe than an incident', () => {
@@ -249,28 +289,34 @@ describe(summarizeExitCode.name, () => {
 	test('ignores an unreachable source when another was readable', () => {
 		// Anthropic operational with no incidents -> 0, despite Downdetector
 		// being unavailable (a flaky scrape must not force 21).
-		expect(summarizeExitCode([
-			anthropicRow({ indicator: 'none', incidents: null }),
-			unreachableDowndetector,
-		])).toBe(0);
+		expect(
+			summarizeExitCode([
+				anthropicRow({ indicator: 'none', incidents: null }),
+				unreachableDowndetector,
+			]),
+		).toBe(0);
 	});
 
 	test('keeps a real outage when another source is unreachable', () => {
-		expect(summarizeExitCode([
-			anthropicRow({ indicator: 'major' }),
-			unreachableDowndetector,
-		])).toBe(2);
+		expect(
+			summarizeExitCode([
+				anthropicRow({ indicator: 'major' }),
+				unreachableDowndetector,
+			]),
+		).toBe(2);
 	});
 
 	test('surfaces 21 only when every source is unreachable', () => {
-		expect(summarizeExitCode([
-			anthropicRow({
-				indicator: 'unavailable',
-				incidents: null,
-				affectedComponents: null,
-			}),
-			unreachableDowndetector,
-		])).toBe(21);
+		expect(
+			summarizeExitCode([
+				anthropicRow({
+					indicator: 'unavailable',
+					incidents: null,
+					affectedComponents: null,
+				}),
+				unreachableDowndetector,
+			]),
+		).toBe(21);
 	});
 
 	test('is zero for no rows', () => {

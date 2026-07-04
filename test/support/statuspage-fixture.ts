@@ -15,8 +15,9 @@ type FixtureServer = {
 async function readSummaryFixture(
 	fixtureName: SummaryFixtureName,
 ): Promise<string> {
-	return file(new URL(import.meta.resolve(`#test/fixtures/${fixtureName}`)))
-		.text();
+	return file(
+		new URL(import.meta.resolve(`#test/fixtures/${fixtureName}`)),
+	).text();
 }
 
 async function startSummaryFixtureServer(

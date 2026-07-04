@@ -80,13 +80,17 @@ function findChrome(chromePath?: string): string | null {
 	}
 
 	if (process.platform === 'win32') {
-		return lookupOnPath('where.exe', BROWSER_CANDIDATES_WIN)
-			?? firstExisting(windowsInstallPaths());
+		return (
+			lookupOnPath('where.exe', BROWSER_CANDIDATES_WIN)
+				?? firstExisting(windowsInstallPaths())
+		);
 	}
 
 	if (process.platform === 'darwin') {
-		return lookupOnPath('which', BROWSER_CANDIDATES)
-			?? firstExisting(MACOS_CHROME_PATHS);
+		return (
+			lookupOnPath('which', BROWSER_CANDIDATES)
+				?? firstExisting(MACOS_CHROME_PATHS)
+		);
 	}
 
 	return lookupOnPath('which', BROWSER_CANDIDATES);
@@ -146,7 +150,7 @@ async function launchBrowser(chrome: string): Promise<LaunchBrowserResult> {
 	);
 
 	const base = `http://localhost:${port}`;
-	if (!await waitForCdp(base, 5000)) {
+	if (!(await waitForCdp(base, 5000))) {
 		cleanupBrowser(proc, userDataDir);
 		return { ok: false, error: 'CDP endpoint never came up' };
 	}
