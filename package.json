@@ -1,6 +1,6 @@
 {
 	"name": "claude-down",
-	"version": "0.6.4",
+	"version": "0.6.5",
 	"description": "Is claude code down? Probably...",
 	"homepage": "https://claude-down.kjanat.dev/",
 	"bugs": {
