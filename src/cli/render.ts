@@ -1,4 +1,6 @@
 import type { Out } from '@kjanat/dreamcli';
+import { createColors } from 'ansispeck';
+import type { Colors } from 'ansispeck';
 
 import { sourceLabels } from '#claude-down/cli/model';
 import type { StatusOutputRow, StatusRow } from '#claude-down/cli/model';
@@ -9,38 +11,27 @@ import {
 import type { IncidentImpactValue } from '#claude-down/lib/types';
 import pkg from '#pkg' with { type: 'json' };
 
-const ANSI_RESET = '\x1b[0m';
-const ANSI_BOLD = '\x1b[1m';
-const ANSI_DIM = '\x1b[2m';
-const ANSI_RED = '\x1b[31m';
-const ANSI_GREEN = '\x1b[32m';
-const ANSI_YELLOW = '\x1b[33m';
+type ColorFn = (text: string) => string;
 
-const INDICATOR_COLORS: Record<IncidentImpactValue, string> = {
-	none: ANSI_GREEN,
-	minor: ANSI_YELLOW,
-	major: ANSI_RED,
-	critical: ANSI_RED,
-};
+function indicatorColors(c: Colors): Record<IncidentImpactValue, ColorFn> {
+	return {
+		none: c.green,
+		minor: c.yellow,
+		major: c.red,
+		critical: c.red,
+	};
+}
 
 type RenderStatusRowOptions = Readonly<{
 	leadingBlank?: boolean;
 }>;
 
-function paint(text: string, codes: string, enabled: boolean): string {
-	return enabled ? `${codes}${text}${ANSI_RESET}` : text;
-}
-
-function hyperlink(text: string, url: string, enabled: boolean): string {
-	return enabled ? `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\` : text;
-}
-
-function statusColor(row: StatusRow): string {
-	if (row.indicator === 'unavailable') return ANSI_DIM;
+function statusColor(row: StatusRow, c: Colors): ColorFn {
+	if (row.indicator === 'unavailable') return c.dim;
 	if (row.source === 'downdetector') {
-		return row.reportsOutage ? ANSI_RED : ANSI_GREEN;
+		return row.reportsOutage ? c.red : c.green;
 	}
-	return INDICATOR_COLORS[row.indicator];
+	return indicatorColors(c)[row.indicator];
 }
 
 function urlFor(row: StatusRow): string {
@@ -61,28 +52,25 @@ function formatList(
 }
 
 function formatRow(row: StatusRow, styled: boolean): string {
-	const color = statusColor(row);
-	const header = hyperlink(
-		paint(sourceLabels[row.source], `${ANSI_BOLD}${color}`, styled),
-		urlFor(row),
-		styled,
-	);
+	const c = createColors(styled);
+	const color = statusColor(row, c);
+	const header = c.link(urlFor(row), c.bold(color(sourceLabels[row.source])));
 	const lines: string[] = [header];
 
 	if (row.indicator === 'unavailable') {
 		const reason = row.summaryText ?? 'unknown error';
-		lines.push(`  ${paint(`Unavailable: ${reason}`, color, styled)}`);
+		lines.push(`  ${color(`Unavailable: ${reason}`)}`);
 		return lines.join('\n');
 	}
 
 	if (row.source === 'downdetector') {
 		const summary = row.summaryText ?? 'No user-reported issues';
-		lines.push(`  ${paint(summary, color, styled)}`);
+		lines.push(`  ${color(summary)}`);
 		return lines.join('\n');
 	}
 
 	const summary = row.summaryText ?? 'All systems operational';
-	lines.push(`  ${paint(summary, color, styled)}`);
+	lines.push(`  ${color(summary)}`);
 
 	const incidents =
 		row.incidents?.map((incident) => `${incident.name} (${incident.status})`)
@@ -159,8 +147,9 @@ function renderStatusRow(
 function renderPageFooter(out: Out): void {
 	if (out.jsonMode || !out.isTTY) return;
 
-	const link = hyperlink(pkg.homepage, pkg.homepage, true);
-	out.log(`\n${paint(`Watch the live status page: ${link}`, ANSI_DIM, true)}`);
+	const c = createColors(true);
+	const link = c.link(pkg.homepage);
+	out.log(`\n${c.dim(`Watch the live status page: ${link}`)}`);
 }
 
 export { renderPageFooter, renderStatusRow, renderStatusRows, toOutputRows };

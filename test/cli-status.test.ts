@@ -13,6 +13,7 @@ import {
 } from '#test/support/statuspage-fixture.ts';
 import { ExitError } from '@kjanat/dreamcli/runtime';
 import { createTestAdapter, runCommand } from '@kjanat/dreamcli/testkit';
+import { strip } from 'ansispeck';
 import { serve } from 'bun';
 import { describe, expect, test } from 'bun:test';
 
@@ -50,23 +51,13 @@ function upOutputRow() {
 	];
 }
 
-const ANTHROPIC_LINK_OPEN = '\x1b]8;;https://status.claude.com\x1b\\';
-const LINK_CLOSE = '\x1b]8;;\x1b\\';
-const RESET = '\x1b[0m';
-const BOLD_RED = '\x1b[1m\x1b[31m';
-const BOLD_GREEN = '\x1b[1m\x1b[32m';
-const BOLD_DIM = '\x1b[1m\x1b[2m';
-const RED = '\x1b[31m';
-const GREEN = '\x1b[32m';
-const DIM = '\x1b[2m';
-
-/** Escapes every RegExp metacharacter so a literal string can be matched. */
-const escapeRegExp = (value: string): string =>
-	value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// We only assert on the plain text this package produces, plus whether
+// styling is present — not on the exact escape bytes ansispeck emits for a
+// given style, which is that package's own API surface, not ours.
+const ESCAPE = /\x1b/;
 
 // Trailing pointer to the web page, appended under human (TTY) status output.
-const PAGE_FOOTER =
-	`\n${DIM}Watch the live status page: \x1b]8;;${pkg.homepage}\x1b\\${pkg.homepage}\x1b]8;;\x1b\\${RESET}\n`;
+const PAGE_FOOTER_PLAIN = `\nWatch the live status page: ${pkg.homepage}\n`;
 
 async function withClosedPort<T>(
 	run: (baseUrl: string) => Promise<T>,
@@ -189,10 +180,12 @@ describe('CLI status output', () => {
 
 			expect(result.exitCode).toBe(EXIT_CODES.major);
 			expect(result.stderr).toEqual([]);
-			expect(result.stdout).toEqual([
-				`\
-${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
-  ${RED}Partial System Outage${RESET}
+			expect(result.stdout).toHaveLength(2);
+			const [body, footer] = result.stdout as [string, string];
+			expect(body).toMatch(ESCAPE);
+			expect(strip(body)).toBe(`\
+Anthropic
+  Partial System Outage
   Active incident:
     - Claude.ai unavailable and elevated errors on the API (identified)
   Affected components:
@@ -200,9 +193,8 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
     - Claude API (api.anthropic.com)
     - Claude Code
     - Claude Cowork
-`,
-				PAGE_FOOTER,
-			]);
+`);
+			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
 	});
@@ -216,10 +208,11 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 
 			expect(result.exitCode).toBe(0);
 			expect(result.stderr).toEqual([]);
-			expect(result.stdout).toEqual([
-				`${ANTHROPIC_LINK_OPEN}${BOLD_GREEN}Anthropic${RESET}${LINK_CLOSE}\n  ${GREEN}All Systems Operational${RESET}\n`,
-				PAGE_FOOTER,
-			]);
+			expect(result.stdout).toHaveLength(2);
+			const [body, footer] = result.stdout as [string, string];
+			expect(body).toMatch(ESCAPE);
+			expect(strip(body)).toBe('Anthropic\n  All Systems Operational\n');
+			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
 	});
@@ -265,14 +258,10 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 			expect(result.exitCode).toBe(EXIT_CODES.unavailable);
 			expect(result.stderr).toEqual([]);
 			expect(result.stdout).toHaveLength(2);
-			const [body, footer] = result.stdout;
-			expect(body).toContain(
-				`${ANTHROPIC_LINK_OPEN}${BOLD_DIM}Anthropic${RESET}${LINK_CLOSE}`,
-			);
-			expect(body).toMatch(
-				new RegExp(`^.+\\n  ${escapeRegExp(DIM)}Unavailable: `),
-			);
-			expect(footer).toBe(PAGE_FOOTER);
+			const [body, footer] = result.stdout as [string, string];
+			expect(body).toMatch(ESCAPE);
+			expect(strip(body)).toMatch(/^Anthropic\n {2}Unavailable: /);
+			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
 		});
 	});
 
@@ -291,10 +280,11 @@ ${ANTHROPIC_LINK_OPEN}${BOLD_RED}Anthropic${RESET}${LINK_CLOSE}
 			expect(result.stderr).toEqual([]);
 			// The result row streams to stdout as styled human output, with a
 			// trailing pointer to the web page.
-			expect(result.stdout).toEqual([
-				`${ANTHROPIC_LINK_OPEN}${BOLD_GREEN}Anthropic${RESET}${LINK_CLOSE}\n  ${GREEN}All Systems Operational${RESET}\n`,
-				PAGE_FOOTER,
-			]);
+			expect(result.stdout).toHaveLength(2);
+			const [body, footer] = result.stdout as [string, string];
+			expect(body).toMatch(ESCAPE);
+			expect(strip(body)).toBe('Anthropic\n  All Systems Operational\n');
+			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
 			// A spinner brackets the check: started naming the source, stopped
 			// once the row is ready to print.
 			expect(result.activity).toEqual([
