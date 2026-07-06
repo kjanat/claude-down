@@ -68,7 +68,7 @@
 		"site:build": "bun build --compile --target=browser ./demo/index.html --outdir=dist/site --minify",
 		"prestart": "bun site:build",
 		"start": "bunx serve dist/site",
-		"publish:npm": "bunx npm@latest publish --access public --provenance",
+		"publish:npm": "npm view \"$(jq -r '\"\\(.name)@\\(.version)\"' package.json)\" version >/dev/null 2>&1 && echo already published, skipping || bunx npm@latest publish --access public --provenance",
 		"publish:pkg-pr-new": "bunx pkg-pr-new publish --bun --bin --packageManager=npm,bun,pnpm"
 	},
 	"dependencies": {
