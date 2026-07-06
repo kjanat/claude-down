@@ -28,9 +28,6 @@ type RenderStatusRowOptions = Readonly<{
 
 function statusColor(row: StatusRow, c: Colors): ColorFn {
 	if (row.indicator === 'unavailable') return c.dim;
-	if (row.source === 'downdetector') {
-		return row.reportsOutage ? c.red : c.green;
-	}
 	return indicatorColors(c)[row.indicator];
 }
 
@@ -54,7 +51,10 @@ function formatList(
 function formatRow(row: StatusRow, styled: boolean): string {
 	const c = createColors(styled);
 	const color = statusColor(row, c);
-	const header = c.link(urlFor(row), c.bold(color(sourceLabels[row.source])));
+	const header = c.link(
+		urlFor(row),
+		c.underline(c.bold(color(sourceLabels[row.source]))),
+	);
 	const lines: string[] = [header];
 
 	if (row.indicator === 'unavailable') {
@@ -148,7 +148,7 @@ function renderPageFooter(out: Out): void {
 	if (out.jsonMode || !out.isTTY) return;
 
 	const c = createColors(true);
-	const link = c.link(pkg.homepage);
+	const link = c.link(pkg.homepage, c.underline(pkg.homepage));
 	out.log(`\n${c.dim(`Watch the live status page: ${link}`)}`);
 }
 

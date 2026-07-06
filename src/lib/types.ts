@@ -41,6 +41,11 @@ type Signal =
 		ok: true;
 		/** The service is up. */
 		down: false;
+		/** Downdetector's own heading text, surfaced when it reports elevated
+		 * user reports that fall short of its `outage` flag (e.g. "User reports
+		 * show possible problems with X"). Omitted when the heading carries no
+		 * such signal. */
+		note?: string;
 	}
 	| {
 		/** The check failed. */

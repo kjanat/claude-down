@@ -73,7 +73,7 @@ type AnthropicStatusRow = Readonly<{
 
 type DowndetectorStatusRow = Readonly<{
 	source: 'downdetector';
-	indicator: Extract<Indicator, 'none' | 'major' | 'unavailable'>;
+	indicator: Extract<Indicator, 'none' | 'minor' | 'major' | 'unavailable'>;
 	summaryText: string | null;
 	reportsOutage: boolean;
 }>;

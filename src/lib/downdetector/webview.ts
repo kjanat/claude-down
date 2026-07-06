@@ -1,5 +1,9 @@
 import { CHROME_PATH_ENV } from '#claude-down/lib/constants';
-import { pollPogoSnapshotFromEvaluate } from '#claude-down/lib/downdetector/snapshot';
+import {
+	detectPossibleProblemsNote,
+	pollPogoSnapshotFromEvaluate,
+	POSSIBLE_PROBLEMS_PATTERN,
+} from '#claude-down/lib/downdetector/snapshot';
 import type { Signal } from '#claude-down/lib/types';
 import { setTimeout as sleep } from 'node:timers/promises';
 
@@ -54,6 +58,8 @@ const WEBVIEW_HEIGHT = ${WEBVIEW_HEIGHT};
 const SNAPSHOT_TIMEOUT_MS = ${WEBVIEW_SNAPSHOT_TIMEOUT_MS};
 const POLL_INTERVAL_MS = 700;
 const CHROME_ARGV = ${JSON.stringify(CHROME_ARGV)};
+const POSSIBLE_PROBLEMS_PATTERN = ${POSSIBLE_PROBLEMS_PATTERN};
+${detectPossibleProblemsNote.toString()}
 
 function webViewOptions(chromePath) {
 	if (chromePath || process.platform !== 'darwin') {
@@ -134,6 +140,10 @@ async function check(url, chromePath) {
 		if (result.kind === 'cloudflare-challenge') return { ok: false, error: 'Cloudflare challenge page' };
 		if (result.pogo.outage === true) {
 			return { ok: true, down: true, reason: result.heading ?? 'outage reported' };
+		}
+		const note = detectPossibleProblemsNote(result.heading);
+		if (note !== undefined) {
+			return { ok: true, down: false, note };
 		}
 		return { ok: true, down: false };
 	} catch (error) {
@@ -229,6 +239,11 @@ async function checkWithWebView(
 				down: true,
 				reason: result.heading ?? 'outage reported',
 			};
+		}
+
+		const note = detectPossibleProblemsNote(result.heading);
+		if (note !== undefined) {
+			return { ok: true, down: false, note };
 		}
 
 		return { ok: true, down: false };

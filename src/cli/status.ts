@@ -86,11 +86,20 @@ async function checkDowndetectorSource(
 		};
 	}
 
+	if (result.down) {
+		return {
+			source: 'downdetector',
+			indicator: 'major',
+			summaryText: result.reason,
+			reportsOutage: true,
+		};
+	}
+
 	return {
 		source: 'downdetector',
-		indicator: result.down ? 'major' : 'none',
-		summaryText: result.down ? result.reason : null,
-		reportsOutage: result.down,
+		indicator: result.note !== undefined ? 'minor' : 'none',
+		summaryText: result.note ?? null,
+		reportsOutage: false,
 	};
 }
 

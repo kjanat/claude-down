@@ -138,4 +138,24 @@ async function pollPogoSnapshotFromEvaluate(
 	return null;
 }
 
-export { pollPogoSnapshot, pollPogoSnapshotFromEvaluate };
+/** Matches Downdetector's "possible problems" heading text. Exported so the
+ * inline worker-source copy in webview.ts (which can't import this module)
+ * interpolates this exact pattern instead of duplicating the regex literal. */
+const POSSIBLE_PROBLEMS_PATTERN = /possible problems/i;
+
+/** Downdetector's own "possible problems" heading text, when the page's
+ * heading carries that signal despite `pogo.outage` being `false`. */
+function detectPossibleProblemsNote(
+	heading: string | null,
+): string | undefined {
+	return heading !== null && POSSIBLE_PROBLEMS_PATTERN.test(heading)
+		? heading
+		: undefined;
+}
+
+export {
+	detectPossibleProblemsNote,
+	pollPogoSnapshot,
+	pollPogoSnapshotFromEvaluate,
+	POSSIBLE_PROBLEMS_PATTERN,
+};

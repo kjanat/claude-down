@@ -5,7 +5,10 @@ import {
 	findChrome,
 	launchBrowser,
 } from '#claude-down/lib/downdetector/chrome';
-import { pollPogoSnapshot } from '#claude-down/lib/downdetector/snapshot';
+import {
+	detectPossibleProblemsNote,
+	pollPogoSnapshot,
+} from '#claude-down/lib/downdetector/snapshot';
 import {
 	checkDownDetectorWithWebView,
 	isBunRuntime,
@@ -69,6 +72,11 @@ async function check(chromePath?: string): Promise<Signal> {
 				down: true,
 				reason: result.heading ?? 'outage reported',
 			};
+		}
+
+		const note = detectPossibleProblemsNote(result.heading);
+		if (note !== undefined) {
+			return { ok: true, down: false, note };
 		}
 
 		return { ok: true, down: false };
