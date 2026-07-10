@@ -6,9 +6,11 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     environment: { name: npm, url: https://npm.im/claude-down }
+    env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE || 'true' }}" }
     steps: [
       uses: actions/checkout@v7,
       uses: kjanat/runner@master,
       uses: oven-sh/setup-bun@v2,
+      { uses: actions/setup-node@v6, with: { node-version-file: .node-version } },
       run: runner install --frozen --kill-on-fail publish:npm,
     ]
