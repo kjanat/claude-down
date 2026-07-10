@@ -139,7 +139,10 @@ describe('CLI status output', () => {
 		expect(result.stderr).toEqual([]);
 		expect(output.startsWith(`claude-down v${pkg.version}\n`)).toBe(true);
 		expect(output).toContain('Usage: claude-down [command] [options]');
-		expect(output).toContain('status (default)');
+		expect(output).toContain(
+			'status (default)  Check Claude status across Anthropic and Downdetector',
+		);
+		expect(output).toContain('claude-down [flags]');
 		expect(output).toContain('web');
 		expect(output).not.toContain('actup');
 		expect(output).not.toContain('0.0.0+dev');

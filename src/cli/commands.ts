@@ -1,4 +1,5 @@
-import { command, type Out } from '@kjanat/dreamcli';
+import type { CommandBuilder, Out } from '@kjanat/dreamcli';
+import { command } from '@kjanat/dreamcli';
 
 import {
 	anthropicStatusBaseFlag,
@@ -35,6 +36,20 @@ type SourceTask = Readonly<{
 }>;
 
 type UrlOpener = (url: string) => Promise<void> | void;
+
+/** Registers `--model` and every per-model convenience flag in one place, so
+ * the set can't drift between the `status` and `anthropic` commands. Takes a
+ * still-flagless builder because dreamcli's `.flag()` name-clash guard
+ * (`Exclude<N, keyof F>`) can't be proven for an open generic `F`. */
+function withModelFlags(cmd: CommandBuilder) {
+	return cmd
+		.flag('model', modelFlag)
+		.flag('opus', modelConvenienceFlags.opus)
+		.flag('haiku', modelConvenienceFlags.haiku)
+		.flag('sonnet', modelConvenienceFlags.sonnet)
+		.flag('mythos', modelConvenienceFlags.mythos)
+		.flag('fable', modelConvenienceFlags.fable);
+}
 
 /**
  * Drives a set of source checks and renders the result. In an interactive
@@ -148,22 +163,18 @@ function applyModelFilter(
 	return rows.map((row) => filterAnthropicByModels(row, selected));
 }
 
-const statusCommand = command('status')
-	.description('Check Claude status across Anthropic and Downdetector')
-	.example('status', 'Check all sources')
-	.example('status --source anthropic', 'Check only Anthropic')
-	.example('status --opus', 'Only report incidents mentioning Opus')
-	.example('status --json', 'Emit machine-readable source rows')
+const statusCommand = withModelFlags(
+	command('status')
+		.description('Check Claude status across Anthropic and Downdetector')
+		.example('status', 'Check all sources')
+		.example('status --source anthropic', 'Check only Anthropic')
+		.example('status --opus', 'Only report incidents mentioning Opus')
+		.example('status --json', 'Emit machine-readable source rows'),
+)
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('chrome', chromeFlag)
 	.flag('quiet', quietFlag)
 	.flag('source', sourceSelectionFlag)
-	.flag('model', modelFlag)
-	.flag('opus', modelConvenienceFlags.opus)
-	.flag('haiku', modelConvenienceFlags.haiku)
-	.flag('sonnet', modelConvenienceFlags.sonnet)
-	.flag('mythos', modelConvenienceFlags.mythos)
-	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
 		const { source, anthropicStatusBase, chrome, quiet } = flags;
 		const tasks = selectedSources(source).map(
@@ -175,18 +186,14 @@ const statusCommand = command('status')
 		await runStatus(tasks, selectedModels(flags), quiet, out);
 	});
 
-const anthropicCommand = command('anthropic')
-	.description(`Check only ${sourceLabels.anthropic}`)
-	.example('anthropic', `Check only ${sourceLabels.anthropic}`)
-	.example('anthropic --model opus', 'Only report incidents mentioning Opus')
+const anthropicCommand = withModelFlags(
+	command('anthropic')
+		.description(`Check only ${sourceLabels.anthropic}`)
+		.example('anthropic', `Check only ${sourceLabels.anthropic}`)
+		.example('anthropic --model opus', 'Only report incidents mentioning Opus'),
+)
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('quiet', quietFlag)
-	.flag('model', modelFlag)
-	.flag('opus', modelConvenienceFlags.opus)
-	.flag('haiku', modelConvenienceFlags.haiku)
-	.flag('sonnet', modelConvenienceFlags.sonnet)
-	.flag('mythos', modelConvenienceFlags.mythos)
-	.flag('fable', modelConvenienceFlags.fable)
 	.action(async ({ flags, out }) => {
 		const tasks: SourceTask[] = [
 			{

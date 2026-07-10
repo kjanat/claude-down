@@ -115,6 +115,14 @@ describe(selectedSources.name, () => {
 		];
 		expect(selectedSources(lists)).toEqual(['anthropic', 'downdetector']);
 	});
+
+	test('dedupes repeated sources so nothing is checked twice', () => {
+		const lists: readonly (readonly Source[])[] = [
+			['anthropic'],
+			['anthropic', 'downdetector'],
+		];
+		expect(selectedSources(lists)).toEqual(['anthropic', 'downdetector']);
+	});
 });
 
 describe(filterAnthropicByModels.name, () => {

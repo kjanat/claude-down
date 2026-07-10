@@ -11,7 +11,7 @@ import {
 } from '#claude-down/lib/downdetector/snapshot';
 import {
 	checkDownDetectorWithWebView,
-	isBunRuntime,
+	hasBunWebView,
 } from '#claude-down/lib/downdetector/webview';
 import type { Signal } from '#claude-down/lib/types';
 
@@ -28,7 +28,9 @@ import type { Signal } from '#claude-down/lib/types';
  * @see {@link https://downdetector.com/status/claude-ai/} for the target page.
  */
 async function check(chromePath?: string): Promise<Signal> {
-	if (isBunRuntime()) {
+	// A Bun runtime without WebView support (older Bun) falls through to the
+	// CDP path below, which works fine under Bun when a Chromium exists.
+	if (hasBunWebView()) {
 		return checkDownDetectorWithWebView(DOWNDETECTOR_URL, chromePath);
 	}
 

@@ -121,11 +121,12 @@ function selectedModels(flags: ModelFlagValues): Set<Model> {
 	return selected;
 }
 
-/** Flattens the per-occurrence `--source` lists into the sources to query. */
+/** Flattens the per-occurrence `--source` lists into the sources to query,
+ * deduplicated so `--source anthropic,anthropic` checks Anthropic once. */
 function selectedSources(
 	source: readonly (readonly Source[])[],
 ): readonly Source[] {
-	return source.flat();
+	return [...new Set(source.flat())];
 }
 
 export {
