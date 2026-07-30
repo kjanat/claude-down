@@ -57,6 +57,8 @@ function upOutputRow() {
 const ESCAPE = /\x1b/;
 
 // Trailing pointer to the web page, appended under human (TTY) status output.
+// Emitted through `out.status()`, so it lands on stderr and stdout stays
+// pipeable.
 const PAGE_FOOTER_PLAIN = `\nWatch the live status page: ${pkg.homepage}\n`;
 
 async function withClosedPort<T>(
@@ -165,8 +167,9 @@ describe('CLI status output', () => {
 		const result = await runCommand(command, []);
 
 		expect(result.exitCode).toBe(0);
-		expect(result.stderr).toEqual([]);
-		expect(result.stdout).toEqual([`Opening ${pkg.homepage}\n`]);
+		// The note is status-channel chatter: stderr, suppressed by `--quiet`.
+		expect(result.stdout).toEqual([]);
+		expect(result.stderr).toEqual([`Opening ${pkg.homepage}\n`]);
 		expect(opened).toEqual([pkg.homepage]);
 	});
 
@@ -182,9 +185,8 @@ describe('CLI status output', () => {
 			});
 
 			expect(result.exitCode).toBe(EXIT_CODES.major);
-			expect(result.stderr).toEqual([]);
-			expect(result.stdout).toHaveLength(2);
-			const [body, footer] = result.stdout as [string, string];
+			expect(result.stdout).toHaveLength(1);
+			const [body] = result.stdout as [string];
 			expect(body).toMatch(ESCAPE);
 			expect(strip(body)).toBe(`\
 Anthropic
@@ -197,7 +199,7 @@ Anthropic
     - Claude Code
     - Claude Cowork
 `);
-			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
+			expect(result.stderr.map(strip)).toEqual([PAGE_FOOTER_PLAIN]);
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
 	});
@@ -210,12 +212,11 @@ Anthropic
 			});
 
 			expect(result.exitCode).toBe(0);
-			expect(result.stderr).toEqual([]);
-			expect(result.stdout).toHaveLength(2);
-			const [body, footer] = result.stdout as [string, string];
+			expect(result.stdout).toHaveLength(1);
+			const [body] = result.stdout as [string];
 			expect(body).toMatch(ESCAPE);
 			expect(strip(body)).toBe('Anthropic\n  All Systems Operational\n');
-			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
+			expect(result.stderr.map(strip)).toEqual([PAGE_FOOTER_PLAIN]);
 			expect(server.requests).toEqual(['/api/v2/summary.json']);
 		});
 	});
@@ -259,12 +260,11 @@ Anthropic
 			});
 
 			expect(result.exitCode).toBe(EXIT_CODES.unavailable);
-			expect(result.stderr).toEqual([]);
-			expect(result.stdout).toHaveLength(2);
-			const [body, footer] = result.stdout as [string, string];
+			expect(result.stdout).toHaveLength(1);
+			const [body] = result.stdout as [string];
 			expect(body).toMatch(ESCAPE);
 			expect(strip(body)).toMatch(/^Anthropic\n {2}Unavailable: /);
-			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
+			expect(result.stderr.map(strip)).toEqual([PAGE_FOOTER_PLAIN]);
 		});
 	});
 
@@ -280,14 +280,13 @@ Anthropic
 			);
 
 			expect(result.exitCode).toBe(0);
-			expect(result.stderr).toEqual([]);
 			// The result row streams to stdout as styled human output, with a
-			// trailing pointer to the web page.
-			expect(result.stdout).toHaveLength(2);
-			const [body, footer] = result.stdout as [string, string];
+			// trailing pointer to the web page on the stderr status channel.
+			expect(result.stdout).toHaveLength(1);
+			const [body] = result.stdout as [string];
 			expect(body).toMatch(ESCAPE);
 			expect(strip(body)).toBe('Anthropic\n  All Systems Operational\n');
-			expect(strip(footer)).toBe(PAGE_FOOTER_PLAIN);
+			expect(result.stderr.map(strip)).toEqual([PAGE_FOOTER_PLAIN]);
 			// A spinner brackets the check: started naming the source, stopped
 			// once the row is ready to print.
 			expect(result.activity).toEqual([
@@ -331,6 +330,23 @@ Anthropic
 			expect(result.exitCode).toBe(0);
 			expect(result.activity).toEqual([]);
 			expect(result.stdout).toEqual([]);
+			expect(result.stderr).toEqual([]);
+		});
+	});
+
+	test('splits comma-separated sources and dedupes repeats', async () => {
+		await withSummaryFixture('anthropic-up.json', async (server) => {
+			const result = await runCommand(
+				statusCommand,
+				['--source', 'anthropic,anthropic', '--source', 'anthropic'],
+				{ env: { [anthropicStatusBaseEnvVar]: server.baseUrl } },
+			);
+
+			expect(result.exitCode).toBe(0);
+			// dreamcli's `.separator(',')`/`.unique()` collapse the selection to
+			// one source, so Anthropic is queried exactly once.
+			expect(server.requests).toEqual(['/api/v2/summary.json']);
+			expect(JSON.parse(result.stdout[0] ?? 'null')).toEqual(upOutputRow());
 		});
 	});
 

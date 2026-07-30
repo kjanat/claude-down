@@ -72,8 +72,8 @@
 		"publish:pkg-pr-new": "bunx pkg-pr-new publish --bun --bin --packageManager=npm,bun,pnpm"
 	},
 	"dependencies": {
-		"@kjanat/dreamcli": "^3.0.0-rc.6",
-		"ansispeck": "^0.1.2"
+		"@kjanat/dreamcli": "^3.0.1",
+		"ansispeck": "^0.4.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.2",

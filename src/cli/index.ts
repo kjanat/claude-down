@@ -1,5 +1,5 @@
 import pkg from '#pkg' with { type: 'json' };
-import { cli } from '@kjanat/dreamcli';
+import { cli, packageRepositoryUrl } from '@kjanat/dreamcli';
 
 import {
 	anthropicCommand,
@@ -8,7 +8,7 @@ import {
 	webCommand,
 } from '#claude-down/cli/commands';
 
-const repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '');
+const repoUrl = packageRepositoryUrl(pkg, { require: true });
 
 const claudeDown = cli(pkg.name)
 	.version(pkg.version)

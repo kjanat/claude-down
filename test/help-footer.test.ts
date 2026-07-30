@@ -30,10 +30,12 @@ describe('help footer', () => {
 
 	test('hyperlink footer wraps the URL in dreamcli osc8', () => {
 		const footer = helpFooter(pkg.homepage, true);
-		expect(footer).toContain(osc8(pkg.homepage, pkg.homepage));
-		// dreamcli terminates the OSC 8 sequence with BEL.
+		// osc8's link text defaults to the target itself.
+		expect(footer).toContain(osc8(pkg.homepage));
+		// dreamcli delegates to ansispeck's hyperlink constructor, which
+		// terminates the OSC 8 sequence with ST (ESC \).
 		expect(footer).toContain(
-			`\x1b]8;;${pkg.homepage}\x07${pkg.homepage}\x1b]8;;\x07`,
+			`\x1b]8;;${pkg.homepage}\x1b\\${pkg.homepage}\x1b]8;;\x1b\\`,
 		);
 	});
 });

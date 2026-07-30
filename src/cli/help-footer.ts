@@ -17,7 +17,8 @@ function wantsHelp(args: readonly string[]): boolean {
  * carries no escape sequences.
  */
 function helpFooter(siteUrl: string, hyperlink = false): string {
-	const link = hyperlink ? osc8(siteUrl, siteUrl) : siteUrl;
+	// osc8's link text defaults to the target itself.
+	const link = hyperlink ? osc8(siteUrl) : siteUrl;
 	return `\nNo terminal? Watch the live status page: ${link}\n`;
 }
 

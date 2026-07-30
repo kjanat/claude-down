@@ -6,9 +6,7 @@ import {
 	chromeFlag,
 	modelConvenienceFlags,
 	modelFlag,
-	quietFlag,
 	selectedModels,
-	selectedSources,
 	sourceSelectionFlag,
 } from '#claude-down/cli/flags';
 import { type Model, type Source, sourceLabels } from '#claude-down/cli/model';
@@ -37,6 +35,18 @@ type SourceTask = Readonly<{
 
 type UrlOpener = (url: string) => Promise<void> | void;
 
+/**
+ * Whether the run is in quiet mode ("silent; exit code only"). dreamcli
+ * intercepts the global `--quiet`/`-q` at the CLI root and records it as the
+ * output channel's verbosity, but the `Out` interface doesn't expose it, so
+ * read the policy snapshot off the concrete channel. Hand-rolled `Out` stubs
+ * without a policy count as not quiet.
+ */
+function isQuiet(out: Out): boolean {
+	const { policy } = out as { policy?: { verbosity?: string } };
+	return policy?.verbosity === 'quiet';
+}
+
 /** Registers `--model` and every per-model convenience flag in one place, so
  * the set can't drift between the `status` and `anthropic` commands. Takes a
  * still-flagless builder because dreamcli's `.flag()` name-clash guard
@@ -60,12 +70,12 @@ function withModelFlags(cmd: CommandBuilder) {
 async function runStatus(
 	tasks: readonly SourceTask[],
 	selected: ReadonlySet<Model>,
-	quiet: boolean,
 	out: Out,
 ): Promise<void> {
 	// Spinners and per-row streaming only make sense in a real terminal: JSON
 	// must stay a single array on stdout, non-TTY output is machine-bound, and
 	// quiet suppresses decoration entirely.
+	const quiet = isQuiet(out);
 	if (out.isTTY && !out.jsonMode && !quiet) {
 		const rows = await streamStatus(tasks, selected, out);
 		out.setExitCode(summarizeExitCode(rows));
@@ -76,7 +86,11 @@ async function runStatus(
 		await Promise.all(tasks.map((task) => task.run())),
 		selected,
 	);
-	finishStatus(rows, quiet, out);
+	if (!quiet) {
+		renderStatusRows(sortRows(rows), out);
+	}
+
+	out.setExitCode(summarizeExitCode(rows));
 }
 
 /** Spinner label naming the sources still being checked. */
@@ -143,18 +157,6 @@ async function streamStatus(
 	return collected;
 }
 
-function finishStatus(
-	rows: readonly StatusRow[],
-	quiet: boolean,
-	out: Out,
-): void {
-	if (!quiet) {
-		renderStatusRows(sortRows(rows), out);
-	}
-
-	out.setExitCode(summarizeExitCode(rows));
-}
-
 function applyModelFilter(
 	rows: readonly StatusRow[],
 	selected: ReadonlySet<Model>,
@@ -166,34 +168,47 @@ function applyModelFilter(
 const statusCommand = withModelFlags(
 	command('status')
 		.description('Check Claude status across Anthropic and Downdetector')
-		.example('status', 'Check all sources')
-		.example('status --source anthropic', 'Check only Anthropic')
-		.example('status --opus', 'Only report incidents mentioning Opus')
-		.example('status --json', 'Emit machine-readable source rows'),
+		.example((meta) => `${meta.name} status`, 'Check all sources')
+		.example(
+			(meta) => `${meta.name} status --source anthropic`,
+			'Check only Anthropic',
+		)
+		.example(
+			(meta) => `${meta.name} status --opus`,
+			'Only report incidents mentioning Opus',
+		)
+		.example(
+			(meta) => `${meta.name} status --json`,
+			'Emit machine-readable source rows',
+		),
 )
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
 	.flag('chrome', chromeFlag)
-	.flag('quiet', quietFlag)
 	.flag('source', sourceSelectionFlag)
 	.action(async ({ flags, out }) => {
-		const { source, anthropicStatusBase, chrome, quiet } = flags;
-		const tasks = selectedSources(source).map(
+		const { source, anthropicStatusBase, chrome } = flags;
+		const tasks = source.map(
 			(src): SourceTask => ({
 				source: src,
 				run: () => checkSource(src, anthropicStatusBase, chrome),
 			}),
 		);
-		await runStatus(tasks, selectedModels(flags), quiet, out);
+		await runStatus(tasks, selectedModels(flags), out);
 	});
 
 const anthropicCommand = withModelFlags(
 	command('anthropic')
 		.description(`Check only ${sourceLabels.anthropic}`)
-		.example('anthropic', `Check only ${sourceLabels.anthropic}`)
-		.example('anthropic --model opus', 'Only report incidents mentioning Opus'),
+		.example(
+			(meta) => `${meta.name} anthropic`,
+			`Check only ${sourceLabels.anthropic}`,
+		)
+		.example(
+			(meta) => `${meta.name} anthropic --model opus`,
+			'Only report incidents mentioning Opus',
+		),
 )
 	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
-	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
 		const tasks: SourceTask[] = [
 			{
@@ -201,14 +216,16 @@ const anthropicCommand = withModelFlags(
 				run: () => checkAnthropicSource(flags.anthropicStatusBase),
 			},
 		];
-		await runStatus(tasks, selectedModels(flags), flags.quiet, out);
+		await runStatus(tasks, selectedModels(flags), out);
 	});
 
 const downdetectorCommand = command('downdetector')
 	.description(`Check only ${sourceLabels.downdetector}`)
-	.example('downdetector', `Check only ${sourceLabels.downdetector}`)
+	.example(
+		(meta) => `${meta.name} downdetector`,
+		`Check only ${sourceLabels.downdetector}`,
+	)
 	.flag('chrome', chromeFlag)
-	.flag('quiet', quietFlag)
 	.action(async ({ flags, out }) => {
 		const tasks: SourceTask[] = [
 			{
@@ -216,17 +233,22 @@ const downdetectorCommand = command('downdetector')
 				run: () => checkDowndetectorSource(flags.chrome),
 			},
 		];
-		await runStatus(tasks, new Set(), flags.quiet, out);
+		await runStatus(tasks, new Set(), out);
 	});
 
 function createWebCommand(openUrl: UrlOpener = openUrlInDefaultBrowser) {
 	return command('web')
 		.alias('site')
 		.description('Open the live status page')
-		.example('web', 'Open the live status page in your browser')
+		.example(
+			(meta) => `${meta.name} web`,
+			'Open the live status page in your browser',
+		)
 		.action(async ({ out }) => {
 			await openUrl(pkg.homepage);
-			out.log(`Opening ${pkg.homepage}`);
+			// A progress note, not payload: stderr keeps stdout pipeable and
+			// `--quiet` silences it.
+			out.status(`Opening ${pkg.homepage}`);
 		});
 }
 
