@@ -25,8 +25,10 @@ const sourceSelectionFlag = flag
 	.unique()
 	.alias('s')
 	.default([...sources])
-	.env('CLAUDE_DOWN_SOURCE')
-	.env('CLAUDE_DOWN_SOURCES') // plural form for convenience
+	// dreamcli binds one env var per flag (each .env() call replaces the
+	// previous), so only the plural spelling — the one help has always
+	// advertised — is supported.
+	.env('CLAUDE_DOWN_SOURCES')
 	.describe('Data source(s) to check');
 
 /** Path to a Chrome/Chromium binary, overriding platform discovery. */
