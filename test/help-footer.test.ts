@@ -1,7 +1,7 @@
 import { helpFooter, wantsHelp } from '#claude-down/cli/help-footer';
 import pkg from '#pkg' with { type: 'json' };
-import { osc8 } from '@kjanat/dreamcli';
 import { describe, expect, test } from 'bun:test';
+import { osc8 } from 'dreamcli';
 
 describe('help footer', () => {
 	test('detects help flags anywhere in argv', () => {

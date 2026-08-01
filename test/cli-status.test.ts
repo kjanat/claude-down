@@ -11,11 +11,11 @@ import {
 	anthropicStatusBaseEnvVar,
 	withSummaryFixture,
 } from '#test/support/statuspage-fixture.ts';
-import { ExitError } from '@kjanat/dreamcli/runtime';
-import { createTestAdapter, runCommand } from '@kjanat/dreamcli/testkit';
 import { strip } from 'ansispeck';
 import { serve } from 'bun';
 import { describe, expect, test } from 'bun:test';
+import { ExitError } from 'dreamcli/runtime';
+import { createTestAdapter, runCommand } from 'dreamcli/testkit';
 
 function downOutputRow() {
 	return [

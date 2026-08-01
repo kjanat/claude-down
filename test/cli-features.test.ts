@@ -12,7 +12,7 @@ import {
 } from '#claude-down/cli/status';
 import { CHROME_PATH_ENV } from '#claude-down/lib/constants';
 import { findChrome } from '#claude-down/lib/downdetector/chrome';
-import { runCommand } from '@kjanat/dreamcli/testkit';
+import { runCommand } from 'dreamcli/testkit';
 
 function anthropicRow(
 	overrides: Partial<Extract<StatusRow, { source: 'anthropic' }>> = {},

@@ -3,8 +3,8 @@
 import { claudeDown } from '#claude-down/cli';
 import { helpFooter, wantsHelp } from '#claude-down/cli/help-footer';
 import pkg from '#pkg' with { type: 'json' };
-import { resolveRenderContext } from '@kjanat/dreamcli';
-import { createNodeAdapter } from '@kjanat/dreamcli/runtime';
+import { resolveRenderContext } from 'dreamcli';
+import { createNodeAdapter } from 'dreamcli/runtime';
 import { argv, env } from 'node:process';
 
 if (import.meta.main) {

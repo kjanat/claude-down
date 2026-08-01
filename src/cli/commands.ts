@@ -1,5 +1,5 @@
-import type { CommandBuilder, Out } from '@kjanat/dreamcli';
-import { command } from '@kjanat/dreamcli';
+import type { CommandBuilder, Out } from 'dreamcli';
+import { command } from 'dreamcli';
 
 import {
 	anthropicStatusBaseFlag,

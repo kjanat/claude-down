@@ -1,6 +1,6 @@
-import type { Out } from '@kjanat/dreamcli';
 import { createColors } from 'ansispeck';
 import type { Colors } from 'ansispeck';
+import type { Out } from 'dreamcli';
 
 import { sourceLabels } from '#claude-down/cli/model';
 import type { StatusOutputRow, StatusRow } from '#claude-down/cli/model';

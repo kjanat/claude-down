@@ -1,5 +1,5 @@
 import pkg from '#pkg' with { type: 'json' };
-import { cli, packageRepositoryUrl } from '@kjanat/dreamcli';
+import { cli, packageRepositoryUrl } from 'dreamcli';
 
 import {
 	anthropicCommand,

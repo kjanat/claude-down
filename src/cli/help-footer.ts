@@ -1,4 +1,4 @@
-import { osc8 } from '@kjanat/dreamcli';
+import { osc8 } from 'dreamcli';
 
 /** Flags that make dreamcli render help instead of running a command. */
 const HELP_FLAGS = new Set(['--help', '-h']);

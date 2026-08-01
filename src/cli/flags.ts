@@ -1,4 +1,4 @@
-import { flag } from '@kjanat/dreamcli';
+import { flag } from 'dreamcli';
 
 import { type Model, models, sources } from '#claude-down/cli/model';
 import {
