@@ -48,7 +48,11 @@ function formatList(
 	}
 }
 
-function formatRow(row: StatusRow, styled: boolean, hyperlinks: boolean): string {
+function formatRow(
+	row: StatusRow,
+	styled: boolean,
+	hyperlinks: boolean,
+): string {
 	const c = createColors(styled, hyperlinks);
 	const color = statusColor(row, c);
 	const header = c.link(

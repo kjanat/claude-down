@@ -2,6 +2,15 @@
 	"name": "claude-down",
 	"version": "0.7.1",
 	"description": "Is claude code down? Probably...",
+	"keywords": [
+		"anthropic",
+		"claude",
+		"cli",
+		"downdetector",
+		"dreamcli",
+		"statuspage",
+		"ansispeck"
+	],
 	"homepage": "https://claude-down.kjanat.dev",
 	"bugs": {
 		"url": "https://github.com/kjanat/claude-down/issues"
@@ -12,17 +21,7 @@
 	},
 	"license": "MIT",
 	"author": "Kaj Kowalski <info@kajkowalski.nl> (https://github.com/kjanat)",
-	"keywords": [
-		"anthropic",
-		"claude",
-		"cli",
-		"downdetector",
-		"dreamcli",
-		"statuspage",
-		"ansispeck"
-	],
 	"type": "module",
-	"jsdelivr": "./dist/browser/browser.js",
 	"imports": {
 		"#claude-down": "./src/index.ts",
 		"#claude-down/cli": "./src/cli/index.ts",
@@ -43,6 +42,7 @@
 		},
 		"./package.json": "./package.json"
 	},
+	"jsdelivr": "./dist/browser/browser.js",
 	"bin": {
 		"claude-down": "dist/bin/cli.mjs"
 	},
@@ -56,32 +56,32 @@
 		"bd": "bun run build",
 		"build": "tsdown",
 		"check": "biome check",
+		"dev": "bun demo/index.html",
 		"fmt": "bunx dprint fmt",
 		"lint": "biome lint",
 		"local": "bun run build -l warn && bun link",
 		"prepublishOnly": "bun run build -l warn",
-		"publishChecks": "e18e-cli analyze; attw; bunx publint --pack bun --strict",
-		"test": "bun test",
-		"typecheck": "tsc --noEmit",
-		"dev": "bun demo/index.html",
 		"preview": "bun start",
+		"publish:npm": "npm view \"$(jq -r '\"\\(.name)@\\(.version)\"' package.json)\" version >/dev/null 2>&1 && echo already published, skipping || bunx npm@11 publish",
+		"publish:pkg-pr-new": "bunx pkg-pr-new publish --bun --bin --packageManager=npm,bun,pnpm",
+		"publishChecks": "e18e-cli analyze; attw; bunx publint --pack bun --strict",
 		"site:build": "bun build --compile --target=browser ./demo/index.html --outdir=dist/site --minify",
 		"prestart": "bun site:build",
 		"start": "bunx serve dist/site",
-		"publish:npm": "npm view \"$(jq -r '\"\\(.name)@\\(.version)\"' package.json)\" version >/dev/null 2>&1 && echo already published, skipping || bunx npm@11 publish",
-		"publish:pkg-pr-new": "bunx pkg-pr-new publish --bun --bin --packageManager=npm,bun,pnpm"
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@kjanat/dreamcli": "^3.0.1",
 		"ansispeck": "^0.4.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.2",
+		"@biomejs/biome": "^2.5.6",
 		"@types/bun": "^1.3",
-		"@types/node": "^26.1.0",
+		"@types/node": "^26.1.2",
 		"statuspage.io": "^3.5",
 		"tsdown": "^0.22",
-		"typescript": "^6"
+		"typescript": "^7"
 	},
 	"packageManager": "bun@1.3.14",
 	"engines": {

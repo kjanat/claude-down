@@ -5,7 +5,6 @@ import { statusCommand } from '#claude-down/cli/commands';
 import { selectedModels } from '#claude-down/cli/flags';
 import { nameMatchesModels } from '#claude-down/cli/model';
 import type { Model, StatusRow } from '#claude-down/cli/model';
-import { runCommand } from '@kjanat/dreamcli/testkit';
 import {
 	filterAnthropicByModels,
 	getExitCode,
@@ -13,6 +12,7 @@ import {
 } from '#claude-down/cli/status';
 import { CHROME_PATH_ENV } from '#claude-down/lib/constants';
 import { findChrome } from '#claude-down/lib/downdetector/chrome';
+import { runCommand } from '@kjanat/dreamcli/testkit';
 
 function anthropicRow(
 	overrides: Partial<Extract<StatusRow, { source: 'anthropic' }>> = {},
