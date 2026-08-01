@@ -7,9 +7,9 @@
 		"claude",
 		"cli",
 		"downdetector",
-		"dreamcli",
 		"statuspage",
-		"ansispeck"
+		"ansispeck",
+		"dreamcli"
 	],
 	"homepage": "https://claude-down.kjanat.dev",
 	"bugs": {
