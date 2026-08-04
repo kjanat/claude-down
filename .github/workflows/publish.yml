@@ -5,12 +5,13 @@ permissions: { id-token: write, contents: read }
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: { name: npm, url: https://npm.im/claude-down }
+    environment: { name: npm, url: "${{ steps.i.outputs.url }}" }
     env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE || 'true' }}" }
     steps: [
       uses: actions/checkout@v7,
       uses: kjanat/runner@master,
-      uses: oven-sh/setup-bun@v2,
-      { uses: actions/setup-node@v7, with: { node-version-file: .node-version } },
-      run: runner install --frozen --kill-on-fail publish:npm,
+      { uses: oven-sh/setup-bun@v2, with: { bun-version: canary } },
+      { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false } },
+      { id: i, run: runner i -sfk publishChecks url:npm },
+      run: run publish:npm,
     ]
