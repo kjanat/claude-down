@@ -1,14 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { execPath } from 'node:process';
 
-import {
-	parseModelList,
-	parseSourceList,
-	selectedModels,
-	selectedSources,
-} from '#claude-down/cli/flags';
-import { nameMatchesModels, sources } from '#claude-down/cli/model';
-import type { Model, Source, StatusRow } from '#claude-down/cli/model';
+import { statusCommand } from '#claude-down/cli/commands';
+import { selectedModels } from '#claude-down/cli/flags';
+import { nameMatchesModels } from '#claude-down/cli/model';
+import type { Model, StatusRow } from '#claude-down/cli/model';
 import {
 	filterAnthropicByModels,
 	getExitCode,
@@ -16,6 +12,7 @@ import {
 } from '#claude-down/cli/status';
 import { CHROME_PATH_ENV } from '#claude-down/lib/constants';
 import { findChrome } from '#claude-down/lib/downdetector/chrome';
+import { runCommand } from 'dreamcli/testkit';
 
 function anthropicRow(
 	overrides: Partial<Extract<StatusRow, { source: 'anthropic' }>> = {},
@@ -42,7 +39,7 @@ const modelFlags = (
 	selected: readonly Model[],
 	booleans: Partial<Record<Model, boolean>> = {},
 ) => ({
-	model: selected.map((model) => [model]),
+	model: selected,
 	opus: false,
 	haiku: false,
 	sonnet: false,
@@ -65,63 +62,29 @@ describe('selectedModels', () => {
 	});
 });
 
-describe(parseModelList.name, () => {
-	test('splits a comma-separated token and trims whitespace', () => {
-		expect(parseModelList('opus, fable ')).toEqual(['opus', 'fable']);
+// Comma-splitting and dedup are dreamcli's `.separator(',')`/`.unique()`
+// array-flag modifiers; assert the wiring rejects bad members at the parse
+// boundary before any source check runs (exit 2, no network).
+describe('enum list flags', () => {
+	test('rejects an unknown model with the allowed set', async () => {
+		const result = await runCommand(statusCommand, ['--model', 'opus,bogus']);
+
+		expect(result.exitCode).toBe(2);
+		const message = result.stderr.join('');
+		expect(message).toContain('bogus');
+		expect(message).toContain('opus');
 	});
 
-	test('parses a single model', () => {
-		expect(parseModelList('mythos')).toEqual(['mythos']);
-	});
-
-	test('ignores empty segments', () => {
-		expect(parseModelList('opus,,fable,')).toEqual(['opus', 'fable']);
-	});
-
-	test('throws a clear error for an unknown model', () => {
-		expect(() => parseModelList('opus,bogus')).toThrow(
-			"Invalid value 'bogus' for flag --model. Allowed: opus, haiku, sonnet, mythos, fable",
-		);
-	});
-});
-
-describe(parseSourceList.name, () => {
-	test('splits a comma-separated token', () => {
-		expect(parseSourceList('anthropic,downdetector')).toEqual([
-			'anthropic',
-			'downdetector',
+	test('rejects an unknown source with the allowed set', async () => {
+		const result = await runCommand(statusCommand, [
+			'--source',
+			'anthropic,bogus',
 		]);
-	});
 
-	test('throws a clear error for an unknown source', () => {
-		expect(() => parseSourceList('anthropic,bogus')).toThrow(
-			"Invalid value 'bogus' for flag --source. Allowed: anthropic, downdetector",
-		);
-	});
-});
-
-describe(selectedSources.name, () => {
-	test('supports the all-sources default', () => {
-		expect(selectedSources([[...sources]])).toEqual([
-			'anthropic',
-			'downdetector',
-		]);
-	});
-
-	test('flattens per-occurrence lists', () => {
-		const lists: readonly (readonly Source[])[] = [
-			['anthropic'],
-			['downdetector'],
-		];
-		expect(selectedSources(lists)).toEqual(['anthropic', 'downdetector']);
-	});
-
-	test('dedupes repeated sources so nothing is checked twice', () => {
-		const lists: readonly (readonly Source[])[] = [
-			['anthropic'],
-			['anthropic', 'downdetector'],
-		];
-		expect(selectedSources(lists)).toEqual(['anthropic', 'downdetector']);
+		expect(result.exitCode).toBe(2);
+		const message = result.stderr.join('');
+		expect(message).toContain('bogus');
+		expect(message).toContain('anthropic');
 	});
 });
 

@@ -1,68 +1,14 @@
-import { flag, ParseError } from '@kjanat/dreamcli';
+import { flag } from 'dreamcli';
 
-import {
-	type Model,
-	models,
-	type Source,
-	sources,
-} from '#claude-down/cli/model';
+import { type Model, models, sources } from '#claude-down/cli/model';
 import {
 	ANTHROPIC_STATUS_BASE,
 	CHROME_PATH_ENV,
 } from '#claude-down/lib/constants';
 
-/** Builds a flag parser that splits one comma-separated token into validated
- * enum members, so `--flag a,b` works alongside repeated `--flag a --flag b`.
- * Thrown ParseErrors are surfaced verbatim by dreamcli's flag parser, matching
- * its built-in enum error format. */
-function csvEnumParser<T extends string>(
-	allowed: readonly T[],
-	flagName: string,
-): (raw: unknown) => readonly T[] {
-	return (raw: unknown): readonly T[] => {
-		const result: T[] = [];
-		for (const token of String(raw).split(',')) {
-			const name = token.trim();
-			if (name.length === 0) continue;
-			// `find` yields the typed member (or undefined) without a cast.
-			const match = allowed.find((value) => value === name);
-			if (match === undefined) {
-				throw new ParseError(
-					`Invalid value '${name}' for flag --${flagName}. Allowed: ${
-						allowed.join(
-							', ',
-						)
-					}`,
-					{
-						code: 'INVALID_VALUE',
-						details: {
-							flag: flagName,
-							input: `--${flagName}`,
-							value: name,
-							allowed,
-						},
-					},
-				);
-			}
-			result.push(match);
-		}
-
-		return result;
-	};
-}
-
-/** Parses one `--model` token into the models it names (comma-separated). */
-const parseModelList = csvEnumParser(models, 'model');
-
-/** Parses one `--source` token into the sources it names (comma-separated). */
-const parseSourceList = csvEnumParser(sources, 'source');
-
-/** Suppresses all output; the process exit code conveys the status instead. */
-const quietFlag = flag.boolean().alias('q').describe('Silent; exit code only');
-
 /** Overrides the base URL used to reach Anthropic's Statuspage API. */
 const anthropicStatusBaseFlag = flag
-	.custom((raw) => new URL(String(raw)))
+	.url()
 	.alias('anthropic-status-base', { hidden: true })
 	.alias('base')
 	.alias('b')
@@ -71,25 +17,32 @@ const anthropicStatusBaseFlag = flag
 	.describe('Override Anthropic status page base URL');
 
 /** Selects which data sources to query; defaults to all available sources.
- * Accepts comma-separated values and/or repeated flags. */
+ * Accepts comma-separated values and/or repeated flags, deduplicated so
+ * `--source anthropic,anthropic` checks Anthropic once. */
 const sourceSelectionFlag = flag
-	.array(flag.custom(parseSourceList))
+	.array(flag.enum(sources))
+	.separator(',')
+	.unique()
 	.alias('s')
-	.default([[...sources]])
-	.env('CLAUDE_DOWN_SOURCE')
-	.env('CLAUDE_DOWN_SOURCES') // plural form for convenience
+	.default([...sources])
+	// dreamcli binds one env var per flag (each .env() call replaces the
+	// previous), so only the plural spelling — the one help has always
+	// advertised — is supported.
+	.env('CLAUDE_DOWN_SOURCES')
 	.describe('Data source(s) to check');
 
 /** Path to a Chrome/Chromium binary, overriding platform discovery. */
 const chromeFlag = flag
-	.string()
+	.path()
 	.env(CHROME_PATH_ENV)
 	.describe('Path to a Chrome/Chromium binary');
 
 /** Restricts reported incidents/components to those naming the given model(s).
  * Accepts comma-separated values and/or repeated flags. */
 const modelFlag = flag
-	.array(flag.custom(parseModelList))
+	.array(flag.enum(models))
+	.separator(',')
+	.unique()
 	.alias('m')
 	.describe('Only report incidents/components mentioning these model(s)');
 
@@ -102,18 +55,18 @@ const modelConvenienceFlags = {
 	fable: flag.boolean().describe('Shortcut for --model fable'),
 } as const;
 
-/** Shape of the flag values used to determine which models were selected.
- * `--model` resolves to one list per occurrence, flattened below. */
+/** Shape of the flag values used to determine which models were selected. */
 type ModelFlagValues =
-	& { model: readonly (readonly Model[])[] }
+	& { model: readonly Model[] }
 	& Record<
 		Model,
 		boolean
 	>;
 
-/** Unions the `--model` lists with any enabled per-model convenience flags. */
+/** Unions the `--model` selection with any enabled per-model convenience
+ * flags. */
 function selectedModels(flags: ModelFlagValues): Set<Model> {
-	const selected = new Set<Model>(flags.model.flat());
+	const selected = new Set<Model>(flags.model);
 	for (const model of models) {
 		if (flags[model]) selected.add(model);
 	}
@@ -121,23 +74,11 @@ function selectedModels(flags: ModelFlagValues): Set<Model> {
 	return selected;
 }
 
-/** Flattens the per-occurrence `--source` lists into the sources to query,
- * deduplicated so `--source anthropic,anthropic` checks Anthropic once. */
-function selectedSources(
-	source: readonly (readonly Source[])[],
-): readonly Source[] {
-	return [...new Set(source.flat())];
-}
-
 export {
 	anthropicStatusBaseFlag,
 	chromeFlag,
 	modelConvenienceFlags,
 	modelFlag,
-	parseModelList,
-	parseSourceList,
-	quietFlag,
 	selectedModels,
-	selectedSources,
 	sourceSelectionFlag,
 };

@@ -1,14 +1,51 @@
 ---
 name: pkg.pr.new
-on: { push: { branches: [master] }, pull_request: null }
+on: { push: { branches: ["**"], tags: ["!**"] }, pull_request_review: { types: [submitted] } }
 permissions: { contents: read }
 concurrency: { group: "pkg-pr-new-${{ github.event.pull_request.head.sha || github.sha }}", cancel-in-progress: true }
 jobs:
-  publish:
+  check:
+    name: Check permissions
     runs-on: ubuntu-latest
+    if: github.event.review.state == 'approved' || github.event_name == 'push'
+    outputs: { has-permissions: "${{ steps.checkPermissions.outputs.require-result }}" }
+    steps: [{ id: checkPermissions, uses: actions-cool/check-user-permission@v2, with: { require: write } }]
+  publish:
+    needs: check
+    name: Publish package-pr-new
+    runs-on: ubuntu-latest
+    if: needs.check.outputs.has-permissions == 'true'
+    outputs: { pkg-pr: "${{ toJSON(steps.publish.outputs) }}" }
     steps: [
       uses: actions/checkout@v7,
+      { uses: oven-sh/setup-bun@v2, with: { bun-version: canary } },
       uses: kjanat/runner@master,
-      uses: oven-sh/setup-bun@v2,
-      run: runner install --frozen --kill-on-fail build publish:pkg-pr-new,
+      run: runner install --frozen build,
+      { id: publish, run: runner run publish:pkg-pr-new },
     ]
+  e2e:
+    needs: publish
+    name: e2e
+    runs-on: ubuntu-latest
+    env: { URL: "${{ fromJSON(needs.publish.outputs['pkg-pr']).urls }}" }
+    steps:
+      - uses: actions/checkout@v7
+      - { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false } }
+      - { uses: oven-sh/setup-bun@v2, with: { bun-version: canary } }
+      - name: Preview binary runs on node and on bun
+
+        run: |
+          declare -i failed=0
+          check() {
+            echo "::group::$*"; trap 'echo "::endgroup::"' RETURN
+            local -i rc=0
+            "$@" --version || rc+=1
+            "$@" --help || rc+=1
+            "$@" --json | tee rows.json
+            jq -e 'length > 0 and all(.[]; has("source") and (.status | type) == "string")' rows.json || rc+=1
+            return $rc
+          }
+          # bunx rejects a URL spec (oven-sh/bun#3675), so -p passes it and names the bin.
+          check bunx --package "${URL}" claude-down || failed+=$?
+          check bunx --bun  -p "${URL}" claude-down || failed+=$?
+          exit "$failed"

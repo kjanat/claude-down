@@ -1,4 +1,4 @@
-import { osc8 } from '@kjanat/dreamcli';
+import { osc8 } from 'dreamcli';
 
 /** Flags that make dreamcli render help instead of running a command. */
 const HELP_FLAGS = new Set(['--help', '-h']);
@@ -17,7 +17,8 @@ function wantsHelp(args: readonly string[]): boolean {
  * carries no escape sequences.
  */
 function helpFooter(siteUrl: string, hyperlink = false): string {
-	const link = hyperlink ? osc8(siteUrl, siteUrl) : siteUrl;
+	// osc8's link text defaults to the target itself.
+	const link = hyperlink ? osc8(siteUrl) : siteUrl;
 	return `\nNo terminal? Watch the live status page: ${link}\n`;
 }
 

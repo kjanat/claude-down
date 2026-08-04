@@ -1,6 +1,6 @@
-import type { Out } from '@kjanat/dreamcli';
 import { createColors } from 'ansispeck';
 import type { Colors } from 'ansispeck';
+import type { Out } from 'dreamcli';
 
 import { sourceLabels } from '#claude-down/cli/model';
 import type { StatusOutputRow, StatusRow } from '#claude-down/cli/model';
@@ -48,8 +48,12 @@ function formatList(
 	}
 }
 
-function formatRow(row: StatusRow, styled: boolean): string {
-	const c = createColors(styled);
+function formatRow(
+	row: StatusRow,
+	styled: boolean,
+	hyperlinks: boolean,
+): string {
+	const c = createColors(styled, hyperlinks);
 	const color = statusColor(row, c);
 	const header = c.link(
 		urlFor(row),
@@ -122,7 +126,11 @@ function renderStatusRows(rows: readonly StatusRow[], out: Out): void {
 		return;
 	}
 
-	out.log(rows.map((row) => formatRow(row, out.isTTY)).join('\n\n'));
+	out.log(
+		rows
+			.map((row) => formatRow(row, out.isTTY, out.isHyperlinkSupported))
+			.join('\n\n'),
+	);
 }
 
 /**
@@ -136,20 +144,22 @@ function renderStatusRow(
 	options: RenderStatusRowOptions = {},
 ): void {
 	const prefix = options.leadingBlank === true ? '\n' : '';
-	out.log(`${prefix}${formatRow(row, out.isTTY)}`);
+	out.log(`${prefix}${formatRow(row, out.isTTY, out.isHyperlinkSupported)}`);
 }
 
 /**
  * Trailing pointer to the auto-polling web page, printed under human status
- * output. Dimmed and OSC 8-linked so it stays unobtrusive yet clickable, and
- * suppressed in JSON/non-TTY so machine-readable output is left untouched.
+ * output. Dimmed and OSC 8-linked so it stays unobtrusive yet clickable.
+ * Emitted through `out.status()` — a stderr side channel that keeps stdout
+ * pipeable and is suppressed under `--quiet` — and skipped in JSON/non-TTY
+ * so machine-readable output is left untouched.
  */
 function renderPageFooter(out: Out): void {
 	if (out.jsonMode || !out.isTTY) return;
 
-	const c = createColors(true);
+	const c = createColors(true, out.isHyperlinkSupported);
 	const link = c.link(pkg.homepage, c.underline(pkg.homepage));
-	out.log(`\n${c.dim(`Watch the live status page: ${link}`)}`);
+	out.status(`\n${c.dim(`Watch the live status page: ${link}`)}`);
 }
 
 export { renderPageFooter, renderStatusRow, renderStatusRows, toOutputRows };
