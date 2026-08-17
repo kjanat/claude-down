@@ -6,13 +6,14 @@ import {
 } from '#claude-down/cli/model';
 import type { Source, StatusRow } from '#claude-down/cli/model';
 import { checkAnthropic } from '#claude-down/lib/anthropic';
-import { EXIT_CODES } from '#claude-down/lib/constants';
+import { ANTHROPIC_STATUS_BASE, EXIT_CODES } from '#claude-down/lib/constants';
 import { checkDownDetector } from '#claude-down/lib/downdetector';
 import {
 	deriveConservativeIndicator,
 	describeIndicator,
+	normalizeIncidentImpact,
 } from '#claude-down/lib/severity';
-import type { ComponentStatus } from '#claude-down/lib/types';
+import type { ComponentStatus, Summary } from '#claude-down/lib/types';
 
 function normalizeComponentStatus(value: string): ComponentStatus {
 	if (
@@ -26,6 +27,51 @@ function normalizeComponentStatus(value: string): ComponentStatus {
 	}
 
 	return 'major_outage';
+}
+
+function incidentUrl(id: string, shortlink: unknown): string {
+	if (typeof shortlink === 'string' && shortlink.length > 0) return shortlink;
+
+	return new URL(
+		`/incidents/${encodeURIComponent(id)}`,
+		ANTHROPIC_STATUS_BASE,
+	).href;
+}
+
+function anthropicSummaryToRow(summary: Summary): StatusRow {
+	const reportedIndicator = summary.status.indicator;
+	const indicator = deriveConservativeIndicator(
+		reportedIndicator,
+		summary.components,
+	);
+	const summaryText = indicator === reportedIndicator
+		? summary.status.description
+		: `${describeIndicator(indicator)} (reported ${String(reportedIndicator)})`;
+	const affectedComponents = summary.components.filter(
+		(component) => component.status !== 'operational',
+	);
+
+	return {
+		source: 'anthropic',
+		indicator,
+		summaryText,
+		incidents: summary.incidents.length > 0
+			? summary.incidents.map((incident) => ({
+				createdAt: incident.created_at,
+				impact: normalizeIncidentImpact(incident.impact),
+				name: incident.name,
+				status: incident.status,
+				updatedAt: incident.updated_at,
+				url: incidentUrl(incident.id, incident.shortlink),
+			}))
+			: null,
+		affectedComponents: affectedComponents.length > 0
+			? affectedComponents.map((component) => ({
+				name: component.name,
+				status: normalizeComponentStatus(component.status),
+			}))
+			: null,
+	};
 }
 
 async function checkAnthropicSource(
@@ -42,35 +88,7 @@ async function checkAnthropicSource(
 		};
 	}
 
-	const reportedIndicator = result.summary.status.indicator;
-	const indicator = deriveConservativeIndicator(
-		reportedIndicator,
-		result.summary.components,
-	);
-	const summaryText = indicator === reportedIndicator
-		? result.summary.status.description
-		: `${describeIndicator(indicator)} (reported ${String(reportedIndicator)})`;
-	const affectedComponents = result.summary.components.filter(
-		(component) => component.status !== 'operational',
-	);
-
-	return {
-		source: 'anthropic',
-		indicator,
-		summaryText,
-		incidents: result.summary.incidents.length > 0
-			? result.summary.incidents.map((incident) => ({
-				name: incident.name,
-				status: incident.status,
-			}))
-			: null,
-		affectedComponents: affectedComponents.length > 0
-			? affectedComponents.map((component) => ({
-				name: component.name,
-				status: normalizeComponentStatus(component.status),
-			}))
-			: null,
-	};
+	return anthropicSummaryToRow(result.summary);
 }
 
 async function checkDowndetectorSource(
@@ -248,6 +266,7 @@ function sortRows(rows: readonly StatusRow[]): StatusRow[] {
 }
 
 export {
+	anthropicSummaryToRow,
 	checkAnthropicSource,
 	checkDowndetectorSource,
 	checkSource,

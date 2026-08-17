@@ -1,5 +1,6 @@
 import type {
 	ComponentStatus,
+	IncidentImpactValue,
 	IncidentStatusValue,
 	Indicator,
 } from '#claude-down/lib/types';
@@ -54,8 +55,18 @@ function nameMatchesModels(
 }
 
 type IncidentSummary = Readonly<{
+	impact: IncidentImpactValue;
 	name: string;
 	status: IncidentStatusValue;
+}>;
+
+type IncidentRow = Readonly<{
+	createdAt: string;
+	impact: IncidentImpactValue;
+	name: string;
+	status: IncidentStatusValue;
+	updatedAt: string;
+	url: string;
 }>;
 
 type AffectedComponent = Readonly<{
@@ -67,7 +78,7 @@ type AnthropicStatusRow = Readonly<{
 	source: 'anthropic';
 	indicator: Indicator;
 	summaryText: string | null;
-	incidents: readonly IncidentSummary[] | null;
+	incidents: readonly IncidentRow[] | null;
 	affectedComponents: readonly AffectedComponent[] | null;
 }>;
 

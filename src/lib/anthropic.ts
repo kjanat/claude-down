@@ -21,7 +21,10 @@ function isStatus(value: unknown): boolean {
 function isIncident(value: unknown): boolean {
 	return isNamedStatusItem(value)
 		&& isRecord(value)
-		&& typeof value.impact === 'string';
+		&& typeof value.created_at === 'string'
+		&& typeof value.id === 'string'
+		&& typeof value.impact === 'string'
+		&& typeof value.updated_at === 'string';
 }
 
 /** Structural check for the parts of a Statuspage summary this package reads

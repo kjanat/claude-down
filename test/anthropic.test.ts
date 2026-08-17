@@ -109,8 +109,12 @@ describe('checkAnthropicSource', () => {
 				summaryText: 'Partial System Outage',
 				incidents: [
 					{
+						createdAt: '2026-04-28T17:41:55.352Z',
+						impact: 'major',
 						name: 'Claude.ai unavailable and elevated errors on the API',
 						status: 'identified',
+						updatedAt: '2026-04-28T17:51:36.937Z',
+						url: 'https://stspg.io/mz37pbn6yt3w',
 					},
 				],
 				affectedComponents: [
@@ -157,9 +161,12 @@ describe('checkAnthropicSource', () => {
 				],
 				incidents: [
 					{
+						created_at: '2026-06-22T00:00:00.000Z',
+						id: 'incident-id',
 						impact: 'major',
 						name: 'Elevated Error Rates',
 						status: 'investigating',
+						updated_at: '2026-06-22T00:05:00.000Z',
 					},
 				],
 				scheduled_maintenances: [],
@@ -173,6 +180,10 @@ describe('checkAnthropicSource', () => {
 
 				expect(row.indicator).toBe('major');
 				expect(row.summaryText).toBe('Major Service Outage (reported minor)');
+				expect(row).toHaveProperty(
+					'incidents.0.url',
+					'https://status.claude.com/incidents/incident-id',
+				);
 				expect(server.requests).toEqual(['/api/v2/summary.json']);
 			},
 		);
@@ -199,9 +210,12 @@ describe('checkAnthropicSource', () => {
 				],
 				incidents: [
 					{
+						created_at: '2026-07-04T00:00:00.000Z',
+						id: 'many-models',
 						impact: 'minor',
 						name: 'Elevated errors across many models',
 						status: 'investigating',
+						updated_at: '2026-07-04T00:05:00.000Z',
 					},
 				],
 				scheduled_maintenances: [],

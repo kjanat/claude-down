@@ -1,5 +1,5 @@
 {
-	"extends": "https://github.com/kjanat/kjanat/raw/1b7194bb/configs/dprint.remote.json",
+	"extends": "https://github.com/kjanat/kjanat/raw/63e08bbf/configs/dprint.remote.json",
 	"lineWidth": 80,
 	"markdown": { "associations": ["!./README.md"] },
 	"prettier": {

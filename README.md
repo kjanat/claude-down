@@ -73,6 +73,21 @@ json for your scripts and your little monitoring guys.
 claude-down status --json
 ```
 
+### status api, straight up
+
+`api` is a read-only convenience wrapper around Claude's public Statuspage
+API. resource requests write JSON; `api list` shows the available endpoints
+and descriptions as a table in a terminal, or JSON when piped (and with
+`--json`). `api ls` is the short alias. omit the resource for the full summary.
+
+```bash
+claude-down api
+claude-down api list
+claude-down api ls --json
+claude-down api incidents/unresolved
+claude-down api components
+```
+
 ### no words, just number
 
 exit code always tell truth (see [the numbers](#the-numbers)), output or not.
