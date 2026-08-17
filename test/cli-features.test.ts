@@ -22,8 +22,22 @@ function anthropicRow(
 		indicator: 'major',
 		summaryText: 'Partial System Outage',
 		incidents: [
-			{ name: 'Claude Opus 4.8 degraded', status: 'investigating' },
-			{ name: 'Sonnet latency', status: 'monitoring' },
+			{
+				createdAt: '2026-08-17T00:00:00.000Z',
+				impact: 'major',
+				name: 'Claude Opus 4.8 degraded',
+				status: 'investigating',
+				updatedAt: '2026-08-17T00:05:00.000Z',
+				url: 'https://status.claude.com/incidents/opus',
+			},
+			{
+				createdAt: '2026-08-17T00:00:00.000Z',
+				impact: 'minor',
+				name: 'Sonnet latency',
+				status: 'monitoring',
+				updatedAt: '2026-08-17T00:05:00.000Z',
+				url: 'https://status.claude.com/incidents/sonnet',
+			},
 		],
 		affectedComponents: [
 			{
@@ -167,8 +181,12 @@ describe(filterAnthropicByModels.name, () => {
 			anthropicRow({
 				incidents: [
 					{
+						createdAt: '2026-08-17T00:00:00.000Z',
+						impact: 'major',
 						name: 'Elevated errors across many models',
 						status: 'investigating',
+						updatedAt: '2026-08-17T00:05:00.000Z',
+						url: 'https://status.claude.com/incidents/many-models',
 					},
 				],
 				affectedComponents: null,

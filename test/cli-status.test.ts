@@ -14,6 +14,7 @@ import {
 import { strip } from 'ansispeck';
 import { serve } from 'bun';
 import { describe, expect, test } from 'bun:test';
+import { cli } from 'dreamcli';
 import { ExitError } from 'dreamcli/runtime';
 import { createTestAdapter, runCommand } from 'dreamcli/testkit';
 
@@ -25,6 +26,7 @@ function downOutputRow() {
 			details: 'Partial System Outage',
 			incidents: [
 				{
+					impact: 'major',
 					name: 'Claude.ai unavailable and elevated errors on the API',
 					status: 'identified',
 				},
@@ -145,6 +147,7 @@ describe('CLI status output', () => {
 			'status (default)  Check Claude status across Anthropic and Downdetector',
 		);
 		expect(output).toContain('claude-down [flags]');
+		expect(output).toContain('api');
 		expect(output).toContain('web');
 		expect(output).not.toContain('actup');
 		expect(output).not.toContain('0.0.0+dev');
@@ -173,8 +176,20 @@ describe('CLI status output', () => {
 		expect(opened).toEqual([pkg.homepage]);
 	});
 
-	test('web command exposes site alias', () => {
-		expect(createWebCommand().schema.aliases).toContain('site');
+	test('web command accepts site alias through CLI dispatch', async () => {
+		const opened: string[] = [];
+		const app = cli('claude-down').command(
+			createWebCommand((url) => {
+				opened.push(url);
+			}),
+		);
+
+		const result = await app.execute(['site']);
+
+		expect(result.exitCode).toBe(0);
+		expect(result.stdout).toEqual([]);
+		expect(result.stderr).toEqual([`Opening ${pkg.homepage}\n`]);
+		expect(opened).toEqual([pkg.homepage]);
 	});
 
 	test('renders Anthropic down fixture as human output in TTY mode', async () => {
@@ -188,11 +203,23 @@ describe('CLI status output', () => {
 			expect(result.stdout).toHaveLength(1);
 			const [body] = result.stdout as [string];
 			expect(body).toMatch(ESCAPE);
+			const createdAt = new Date(
+				'2026-04-28T17:41:55.352Z',
+			).toLocaleString(undefined, {
+				dateStyle: 'medium',
+				timeStyle: 'short',
+			});
+			const updatedAt = new Date(
+				'2026-04-28T17:51:36.937Z',
+			).toLocaleString(undefined, {
+				dateStyle: 'medium',
+				timeStyle: 'short',
+			});
 			expect(strip(body)).toBe(`\
 Anthropic
   Partial System Outage
   Active incident:
-    - Claude.ai unavailable and elevated errors on the API (identified)
+    - Claude.ai unavailable and elevated errors on the API ↗ [MAJOR] (identified) — Created ${createdAt} · Updated ${updatedAt}
   Affected components:
     - claude.ai
     - Claude API (api.anthropic.com)

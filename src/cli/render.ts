@@ -48,6 +48,16 @@ function formatList(
 	}
 }
 
+function formatIncidentTime(value: string): string {
+	const date = new Date(value);
+	if (Number.isNaN(date.valueOf())) return value;
+
+	return date.toLocaleString(undefined, {
+		dateStyle: 'medium',
+		timeStyle: 'short',
+	});
+}
+
 function formatRow(
 	row: StatusRow,
 	styled: boolean,
@@ -76,9 +86,19 @@ function formatRow(
 	const summary = row.summaryText ?? 'All systems operational';
 	lines.push(`  ${color(summary)}`);
 
-	const incidents =
-		row.incidents?.map((incident) => `${incident.name} (${incident.status})`)
-			?? [];
+	const incidents = row.incidents?.map((incident) => {
+		const link = c.link(incident.url, c.underline('↗'));
+		const impact = indicatorColors(c)[incident.impact](
+			`[${incident.impact.toUpperCase()}]`,
+		);
+		const metadata = c.dim(
+			`Created ${formatIncidentTime(incident.createdAt)} · Updated ${
+				formatIncidentTime(incident.updatedAt)
+			}`,
+		);
+		return `${incident.name} ${link} ${impact} (${incident.status}) — ${metadata}`;
+	})
+		?? [];
 	formatList(
 		lines,
 		incidents.length === 1 ? 'Active incident' : 'Active incidents',
@@ -111,7 +131,11 @@ function toOutputRow(row: StatusRow): StatusOutputRow {
 		source: 'anthropic',
 		status: row.indicator === 'none' ? 'up' : row.indicator,
 		details: row.summaryText,
-		incidents: row.incidents,
+		incidents: row.incidents?.map((incident) => ({
+			impact: incident.impact,
+			name: incident.name,
+			status: incident.status,
+		})) ?? null,
 		affected: row.affectedComponents,
 	};
 }

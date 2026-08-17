@@ -1,6 +1,11 @@
 import type { CommandBuilder, Out } from 'dreamcli';
-import { command } from 'dreamcli';
+import { arg, command } from 'dreamcli';
 
+import {
+	fetchStatusApiResource,
+	statusApiResourceList,
+	statusApiResources,
+} from '#claude-down/cli/api';
 import {
 	anthropicStatusBaseFlag,
 	chromeFlag,
@@ -236,6 +241,51 @@ const downdetectorCommand = command('downdetector')
 		await runStatus(tasks, new Set(), out);
 	});
 
+const apiListCommand = command('list')
+	.alias('ls')
+	.description('List available Status API endpoints (alias: ls)')
+	.action(({ out }) => {
+		const endpoints = statusApiResourceList();
+		if (out.jsonMode || !out.isTTY) {
+			out.json(endpoints);
+			return;
+		}
+
+		out.table(endpoints, [
+			{ key: 'endpoint', header: 'Endpoint' },
+			{ key: 'description', header: 'Description' },
+		]);
+	});
+
+const apiCommand = command('api')
+	.description('Print a read-only Claude Status API response as JSON')
+	.example((meta) => `${meta.name} api`, 'Print the full status summary')
+	.example(
+		(meta) => `${meta.name} api incidents/unresolved`,
+		'Print unresolved incidents',
+	)
+	.example((meta) => `${meta.name} api list`, 'List available endpoints')
+	.example(
+		(meta) => `${meta.name} api ls`,
+		'List endpoints using the short alias',
+	)
+	.command(apiListCommand)
+	.arg(
+		'resource',
+		arg.enum(statusApiResources)
+			.default('summary')
+			.describe('Status API resource to fetch'),
+	)
+	.flag('anthropicStatusBase', anthropicStatusBaseFlag)
+	.action(async ({ args, flags, out }) => {
+		out.json(
+			await fetchStatusApiResource(
+				args.resource,
+				flags.anthropicStatusBase,
+			),
+		);
+	});
+
 function createWebCommand(openUrl: UrlOpener = openUrlInDefaultBrowser) {
 	return command('web')
 		.alias('site')
@@ -256,6 +306,7 @@ const webCommand = createWebCommand();
 
 export {
 	anthropicCommand,
+	apiCommand,
 	createWebCommand,
 	downdetectorCommand,
 	statusCommand,

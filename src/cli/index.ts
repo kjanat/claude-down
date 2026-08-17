@@ -3,6 +3,7 @@ import { cli, packageRepositoryUrl } from 'dreamcli';
 
 import {
 	anthropicCommand,
+	apiCommand,
 	downdetectorCommand,
 	statusCommand,
 	webCommand,
@@ -15,6 +16,7 @@ const claudeDown = cli(pkg.name)
 	.description(pkg.description)
 	.links({ name: repoUrl, version: `${repoUrl}/releases/tag/v${pkg.version}` })
 	.default(statusCommand, { route: true })
+	.command(apiCommand)
 	.command(anthropicCommand)
 	.command(downdetectorCommand)
 	.command(webCommand)
